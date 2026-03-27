@@ -1,0 +1,709 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MARKEX — Global Market Data</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+            display: ['Syne', 'sans-serif'],
+          },
+          colors: {
+            bg:'#050a0e', surface:'#0a1520', border:'#0d2035', borderb:'#1a3a5c',
+            accent:'#00d4ff', accentdim:'#0099bb', gain:'#00ff88', loss:'#ff3366',
+            gold:'#ffb800', textd:'#c8dde8', textdim:'#4a7090', textb:'#eaf6ff',
+          },
+          keyframes: {
+            pulse2: { '0%,100%': { opacity:'1' }, '50%': { opacity:'0.3' } },
+            fadein: { 'from': { opacity:'0', transform:'translateY(6px)' }, 'to': { opacity:'1', transform:'none' } },
+          },
+          animation: { 'live':'pulse2 2s infinite', 'fadein':'fadein 0.3s ease forwards' },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:#050a0e; font-family:'JetBrains Mono',monospace; color:#c8dde8; overflow:hidden; height:100vh; }
+    ::-webkit-scrollbar { width:4px; height:4px; }
+    ::-webkit-scrollbar-track { background:#050a0e; }
+    ::-webkit-scrollbar-thumb { background:#0d2035; border-radius:2px; }
+    .inst-row { border-left:2px solid transparent; transition:background .12s,border-color .12s; cursor:pointer; }
+    .inst-row:hover { background:#0d1e30; }
+    .inst-row.active { background:#0c1e30; border-left-color:#00d4ff; }
+    .cat-btn { transition:background .15s,color .15s,border-color .15s; cursor:pointer; }
+    .cat-btn.active { background:#0d2035; border-color:#1a3a5c; color:#00d4ff; }
+    .cat-btn:not(.active):hover { background:#0d2035; }
+    .tf-btn { cursor:pointer; transition:background .15s; }
+    .tf-btn.active { background:#0d2035; border:1px solid #1a3a5c; color:#00d4ff; }
+    @keyframes pulse2 { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+    @keyframes fadein { from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;} }
+    .live-dot { animation:pulse2 2s infinite; }
+    .ticker-wrap { overflow:hidden; }
+    .ticker-inner { display:flex; gap:2rem; white-space:nowrap; animation:ticker-scroll 30s linear infinite; width:max-content; }
+    .ticker-inner:hover { animation-play-state:paused; }
+    @keyframes ticker-scroll { from{transform:translateX(0);}to{transform:translateX(-50%);} }
+    canvas { display:block; }
+    .flash-up { animation:flash-green .6s ease; }
+    .flash-down { animation:flash-red .6s ease; }
+    @keyframes flash-green { 0%,100%{color:#eaf6ff;}50%{color:#00ff88;} }
+    @keyframes flash-red   { 0%,100%{color:#eaf6ff;}50%{color:#ff3366;} }
+
+    /* RIGHT AI PANEL */
+    #ai-panel { width:264px; min-width:264px; border-left:1px solid #0d2035; background:#07101a; overflow-y:auto; display:flex; flex-direction:column; gap:12px; padding:14px 12px; }
+    #ai-panel::-webkit-scrollbar { width:3px; }
+    #ai-panel::-webkit-scrollbar-thumb { background:#0d2035; border-radius:2px; }
+    .ai-card { background:#0a1520; border:1px solid #0d2035; border-radius:8px; padding:12px 14px; }
+    .ai-card-title { font-size:9px; font-weight:800; letter-spacing:.12em; color:#2a4a60; text-transform:uppercase; margin-bottom:10px; }
+    .ai-sentiment-box { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; border-radius:6px; margin-bottom:10px; }
+    .ai-signal-bar { margin-bottom:7px; }
+    .ai-signal-row { display:flex; justify-content:space-between; font-size:10px; color:#4a7090; margin-bottom:3px; }
+    .ai-bar-track { height:3px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden; }
+    .ai-bar-fill { height:100%; border-radius:2px; transition:width .8s ease; }
+    .ai-target-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; font-size:10px; }
+    .ai-meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .ai-meta-item { display:flex; flex-direction:column; gap:2px; }
+    .ai-meta-label { font-size:8px; color:#2a4a60; text-transform:uppercase; letter-spacing:.08em; }
+    .ai-meta-val { font-size:11px; font-weight:700; color:#c8dde8; }
+    .ai-sig-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .ai-sig-left { display:flex; gap:6px; align-items:center; font-size:10px; color:#4a7090; }
+    .ai-sig-status { font-size:9px; font-weight:800; letter-spacing:.05em; }
+    @keyframes ai-spin { to{transform:rotate(360deg);} }
+    .ai-spinner { width:28px; height:28px; border:2px solid transparent; border-top-color:#00d4ff; border-radius:50%; animation:ai-spin .7s linear infinite; }
+    #ai-thinking { display:none; position:absolute; inset:0; background:rgba(5,10,14,0.88); backdrop-filter:blur(6px); border-radius:8px; align-items:center; justify-content:center; flex-direction:column; gap:8px; color:#00d4ff; font-size:9px; letter-spacing:.15em; font-weight:700; z-index:10; }
+    #ai-thinking.visible { display:flex; }
+
+    /* FORECAST BOXES */
+    .forecast-box { background:#0a1520; border:1px solid #0d2035; border-radius:10px; padding:16px 20px; flex:1; text-align:center; position:relative; overflow:hidden; }
+    .forecast-box::before { content:''; position:absolute; inset:0; border-radius:10px; opacity:0; transition:opacity .3s; }
+    .forecast-box.up::before { background:linear-gradient(135deg, rgba(0,255,136,0.05), transparent); opacity:1; }
+    .forecast-box.down::before { background:linear-gradient(135deg, rgba(255,51,102,0.05), transparent); opacity:1; }
+    .forecast-label { font-size:8px; font-weight:800; letter-spacing:.15em; color:#2a4a60; text-transform:uppercase; margin-bottom:6px; }
+    .forecast-price { font-family:'Syne',sans-serif; font-size:18px; font-weight:900; color:#eaf6ff; margin-bottom:4px; }
+    .forecast-chg { font-size:11px; font-weight:700; margin-bottom:6px; }
+    .forecast-conf { font-size:9px; color:#4a7090; }
+    .forecast-loader { display:none; width:20px; height:20px; border:2px solid transparent; border-top-color:#00d4ff; border-radius:50%; animation:ai-spin .7s linear infinite; margin:auto; }
+  </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden bg-bg text-textd font-mono">
+
+  <!-- TOP NAV -->
+  <header class="flex items-center justify-between px-6 h-[52px] border-b border-border bg-surface shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-md flex items-center justify-center text-white text-[13px] font-bold"
+           style="background:linear-gradient(135deg,#00d4ff,#0044ff)">M</div>
+      <span class="font-display font-extrabold text-[15px] text-textb tracking-[0.04em]">MARKEX</span>
+      <span class="text-[9px] text-textdim border-l border-border pl-3 tracking-[0.1em]">XGBoost-Powered Forecasting</span>
+    </div>
+    <div class="flex items-center gap-5">
+      <div class="flex items-center gap-1.5">
+        <div class="live-dot w-1.5 h-1.5 rounded-full bg-gain"></div>
+        <span class="text-[9px] text-gain tracking-[0.1em]">LIVE</span>
+      </div>
+      <span id="clock" class="text-[9px] text-textdim"></span>
+    </div>
+  </header>
+
+  <!-- TICKER STRIP -->
+  <div class="ticker-wrap shrink-0 border-b border-border py-1.5" style="background:#030710">
+    <div class="ticker-inner text-[10px] tracking-[0.04em]" id="ticker-inner"></div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-[340px] shrink-0 border-r border-border flex flex-col overflow-hidden">
+      <div class="px-3.5 py-3 border-b border-border">
+        <div class="flex items-center gap-2 bg-[#030812] border border-border rounded-md px-2.5 py-1.5">
+          <span class="text-textdim text-xs">⌕</span>
+          <input id="search-input" type="text" placeholder="Search symbol or name..."
+                 class="bg-transparent outline-none text-textd text-[11px] font-mono w-full placeholder-textdim" />
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-1 px-3.5 py-2.5 border-b border-border">
+        {% for cat in categories %}
+        <button class="cat-btn {% if forloop.first %}active{% endif %} border border-transparent rounded text-[9px] px-2 py-0.5 font-mono tracking-[0.06em] {% if not forloop.first %}text-textdim{% endif %}"
+                data-cat="{{ cat.id }}">{{ cat.label }}</button>
+        {% endfor %}
+      </div>
+      <div class="grid border-b border-border px-3.5 py-1.5 text-[8px] text-textdim tracking-[0.08em]"
+           style="grid-template-columns:1fr 90px 70px 58px">
+        <span>INSTRUMENT</span><span class="text-right">PRICE</span>
+        <span class="text-right">24H%</span><span class="text-right">7D</span>
+      </div>
+      <div id="instrument-list" class="overflow-y-auto flex-1"></div>
+    </aside>
+
+    <!-- DETAIL PANEL -->
+    <main class="flex-1 flex flex-col overflow-y-auto">
+
+      <!-- Instrument Header -->
+      <div class="flex items-start justify-between px-7 py-[18px] border-b border-border bg-surface shrink-0">
+        <div class="flex items-center gap-4">
+          <div id="detail-icon" class="w-12 h-12 rounded-[10px] border border-borderb flex items-center justify-center text-lg font-bold text-accent"
+               style="background:linear-gradient(135deg,#0099bb22,#00d4ff33)"></div>
+          <div>
+            <div class="flex items-center gap-2.5">
+              <span id="detail-symbol" class="font-display font-extrabold text-[22px] text-textb tracking-[-0.02em]"></span>
+              <span id="detail-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-border text-textdim tracking-[0.08em]"></span>
+            </div>
+            <span id="detail-name" class="text-[11px] text-textdim"></span>
+          </div>
+        </div>
+        <div class="text-right">
+          <div id="detail-price" class="font-display font-extrabold text-[30px] text-textb tracking-[-0.02em]"></div>
+          <div id="detail-change" class="text-[13px] font-semibold"></div>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid shrink-0 border-b border-border" style="grid-template-columns:repeat(5,1fr)">
+        <div class="px-5 py-3 border-r border-border"><div class="text-[8px] text-textdim tracking-[0.1em] mb-1">OPEN</div><div id="stat-open" class="text-[13px] text-textb font-medium">—</div></div>
+        <div class="px-5 py-3 border-r border-border"><div class="text-[8px] text-textdim tracking-[0.1em] mb-1">HIGH</div><div id="stat-high" class="text-[13px] text-gain font-medium">—</div></div>
+        <div class="px-5 py-3 border-r border-border"><div class="text-[8px] text-textdim tracking-[0.1em] mb-1">LOW</div><div id="stat-low" class="text-[13px] text-loss font-medium">—</div></div>
+        <div class="px-5 py-3 border-r border-border"><div class="text-[8px] text-textdim tracking-[0.1em] mb-1">VOLUME</div><div id="stat-vol" class="text-[13px] text-textb font-medium">—</div></div>
+        <div class="px-5 py-3"><div class="text-[8px] text-textdim tracking-[0.1em] mb-1">MKT CAP</div><div id="stat-mcap" class="text-[13px] text-textb font-medium">—</div></div>
+      </div>
+
+      <!-- Chart Area -->
+      <div class="p-6 flex-1">
+
+        <!-- XGBoost Forecast Row (centre-stage) -->
+        <div class="mb-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-[10px] text-textdim tracking-[0.1em]">🤖 XGBOOST PRICE FORECAST</span>
+            <div id="fc-spinner" style="display:none;width:14px;height:14px;border:2px solid transparent;border-top-color:#00d4ff;border-radius:50%;animation:ai-spin .7s linear infinite;"></div>
+            <span id="fc-status" class="text-[9px] text-textdim"></span>
+          </div>
+          <div class="flex gap-3" id="forecast-row">
+            <!-- 1 Day -->
+            <div class="forecast-box" id="fc-1d">
+              <div class="forecast-label">1 Day</div>
+              <div class="forecast-price" id="fc-1d-price">—</div>
+              <div class="forecast-chg" id="fc-1d-chg">—</div>
+              <div class="forecast-conf" id="fc-1d-conf">confidence —</div>
+            </div>
+            <!-- 1 Week -->
+            <div class="forecast-box" id="fc-1w">
+              <div class="forecast-label">1 Week</div>
+              <div class="forecast-price" id="fc-1w-price">—</div>
+              <div class="forecast-chg" id="fc-1w-chg">—</div>
+              <div class="forecast-conf" id="fc-1w-conf">confidence —</div>
+            </div>
+            <!-- 1 Month -->
+            <div class="forecast-box" id="fc-1m">
+              <div class="forecast-label">1 Month</div>
+              <div class="forecast-price" id="fc-1m-price">—</div>
+              <div class="forecast-chg" id="fc-1m-chg">—</div>
+              <div class="forecast-conf" id="fc-1m-conf">confidence —</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Candlestick Card -->
+        <div class="bg-surface border border-border rounded-[10px] p-4 mb-5">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-[10px] text-textdim tracking-[0.1em]">OHLC CANDLESTICK · <span id="active-tf">1H</span></span>
+            <div class="flex gap-1.5" id="tf-buttons">
+              <button class="tf-btn text-textdim rounded px-2 py-0.5 text-[9px] font-mono" data-tf="15M">15M</button>
+              <button class="tf-btn active rounded px-2 py-0.5 text-[9px] font-mono" data-tf="1H">1H</button>
+              <button class="tf-btn text-textdim rounded px-2 py-0.5 text-[9px] font-mono" data-tf="4H">4H</button>
+              <button class="tf-btn text-textdim rounded px-2 py-0.5 text-[9px] font-mono" data-tf="1D">1D</button>
+              <button class="tf-btn text-textdim rounded px-2 py-0.5 text-[9px] font-mono" data-tf="1W">1W</button>
+            </div>
+          </div>
+          <div style="background:#030710;border-radius:6px;border:1px solid #0d2035;overflow:hidden;">
+            <canvas id="candle-chart" height="220"></canvas>
+          </div>
+        </div>
+
+        <!-- Bottom Two Panels -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-surface border border-border rounded-[10px] p-4">
+            <div class="text-[10px] text-textdim tracking-[0.1em] mb-3.5">TOP MOVERS · 24H</div>
+            <div id="movers-list"></div>
+          </div>
+          <div class="bg-surface border border-border rounded-[10px] p-4">
+            <div class="text-[10px] text-textdim tracking-[0.1em] mb-3.5">CATEGORY PERFORMANCE</div>
+            <div id="category-perf"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- AI FORECAST PANEL (right) -->
+    <div id="ai-panel">
+      <!-- AI Verdict -->
+      <div class="ai-card" style="position:relative;">
+        <div id="ai-thinking"><div class="ai-spinner"></div><span>XGB ANALYZING</span></div>
+        <div class="ai-card-title">⚡ AI VERDICT</div>
+        <div class="ai-sentiment-box" id="ai-sentiment-box">
+          <div>
+            <div id="ai-sent-label" style="font-size:14px;font-weight:900;letter-spacing:.04em;">—</div>
+            <div style="font-size:9px;color:#4a7090;margin-top:2px;">1-week outlook</div>
+          </div>
+          <div style="text-align:right;">
+            <div id="ai-conf-val" style="font-size:18px;font-weight:900;">—</div>
+            <div style="font-size:9px;color:#4a7090;">confidence</div>
+          </div>
+        </div>
+        <div id="ai-signal-bars"></div>
+      </div>
+
+      <!-- Price Targets -->
+      <div class="ai-card">
+        <div class="ai-card-title">🎯 FORECAST TARGETS</div>
+        <div id="ai-price-targets"></div>
+      </div>
+
+      <!-- Market Data -->
+      <div class="ai-card">
+        <div class="ai-card-title">📊 MARKET DATA</div>
+        <div class="ai-meta-grid" id="ai-market-data"></div>
+      </div>
+
+      <!-- AI Signals -->
+      <div class="ai-card">
+        <div class="ai-card-title">🤖 TECHNICAL SIGNALS</div>
+        <div id="ai-signals-list"></div>
+      </div>
+
+      <!-- Model Info -->
+      <div class="ai-card" style="background:rgba(0,212,255,0.03);border-color:rgba(0,212,255,0.12);">
+        <div class="ai-card-title">🧠 MODEL INFO</div>
+        <div style="font-size:10px;color:#2a4a60;line-height:1.9;">
+          Architecture: XGBoost Regressor<br>
+          Training data: 2Y historical (yfinance)<br>
+          Features: 40+ tech indicators<br>
+          Horizons: 1D · 1W · 1M<br>
+          Cache TTL: <span style="color:#00d4ff;">10 minutes</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main layout -->
+
+  <script>
+  (() => {
+    'use strict';
+
+    const INSTRUMENTS = {{ instruments_json|safe }};
+    const prices = {};
+    INSTRUMENTS.forEach(i => prices[i.id] = i.price);
+    const sparklines = {};
+    INSTRUMENTS.forEach(i => { sparklines[i.id] = genSparkline(i.price, i.change); });
+    const ohlcData = {};
+    INSTRUMENTS.forEach(i => { ohlcData[i.id] = genOHLC(i.price, 60); });
+
+    let selectedId = INSTRUMENTS[0]?.id || 'BTC';
+    let activeCategory = 'all';
+    let activeSearch = '';
+
+    // ── HELPERS ───────────────────────────────────────────────
+    function fmtPrice(p) {
+      if (p >= 10000) return p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      if (p >= 1)     return p.toFixed(2);
+      return p.toFixed(4);
+    }
+    function fmtPriceFull(p) {
+      if (p >= 10000) return '$' + p.toLocaleString('en-US',{maximumFractionDigits:0});
+      if (p >= 100)   return '$' + p.toFixed(2);
+      if (p >= 1)     return '$' + p.toFixed(3);
+      return '$' + p.toFixed(4);
+    }
+    function genSparkline(base, change, n=24) {
+      const pts=[]; let p=base*(1-change/100*0.8);
+      for(let i=0;i<n;i++){p+=(Math.random()-0.48)*base*0.005; pts.push(p);}
+      pts[pts.length-1]=base; return pts;
+    }
+    function genOHLC(base,n=60){
+      const data=[]; let p=base*0.92;
+      for(let i=0;i<n;i++){
+        const open=p, close=p+(Math.random()-0.48)*p*0.015;
+        const high=Math.max(open,close)+Math.random()*p*0.006;
+        const low=Math.min(open,close)-Math.random()*p*0.006;
+        data.push({open,high,low,close}); p=close;
+      }
+      return data;
+    }
+    function svgSparkline(pts,positive,w=52,h=24){
+      const min=Math.min(...pts),max=Math.max(...pts),range=max-min||1;
+      const coords=pts.map((v,i)=>`${((i/(pts.length-1))*w).toFixed(1)},${(h-((v-min)/range)*h).toFixed(1)}`).join(' ');
+      const color=positive?'#00ff88':'#ff3366';
+      const id='sp'+Math.random().toString(36).slice(2);
+      return `<svg width="${w}" height="${h}" style="overflow:visible;display:block">
+        <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient></defs>
+        <polyline points="0,${h} ${coords} ${w},${h}" fill="url(#${id})" stroke="none"/>
+        <polyline points="${coords}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>`;
+    }
+
+    // ── CLOCK ─────────────────────────────────────────────────
+    function updateClock(){
+      document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB',{timeZone:'UTC'})+' UTC';
+    }
+    updateClock(); setInterval(updateClock,1000);
+
+    // ── TICKER ────────────────────────────────────────────────
+    function buildTicker(){
+      const inner=document.getElementById('ticker-inner');
+      const items=INSTRUMENTS.slice(0,12); let html='';
+      for(let pass=0;pass<2;pass++){
+        items.forEach(inst=>{
+          const pos=inst.change>=0;
+          html+=`<span class="ticker-item" data-id="${inst.id}">
+            <span class="text-textdim">${inst.id} </span>
+            <span class="text-textb ticker-price" data-id="${inst.id}">${fmtPrice(prices[inst.id])}</span>
+            <span class="${pos?'text-gain':'text-loss'}"> ${pos?'▲':'▼'}${Math.abs(inst.change)}%</span>
+          </span>`;
+        });
+      }
+      inner.innerHTML=html;
+    }
+    buildTicker();
+
+    // ── INSTRUMENT LIST ───────────────────────────────────────
+    function getFiltered(){
+      return INSTRUMENTS.filter(inst=>{
+        const matchCat=activeCategory==='all'||inst.cat===activeCategory;
+        const q=activeSearch.toLowerCase();
+        const matchSearch=!q||inst.id.toLowerCase().includes(q)||inst.name.toLowerCase().includes(q);
+        return matchCat&&matchSearch;
+      });
+    }
+    function renderList(){
+      const list=document.getElementById('instrument-list');
+      const filtered=getFiltered();
+      list.innerHTML=filtered.map(inst=>{
+        const p=prices[inst.id], pos=inst.change>=0, isActive=inst.id===selectedId;
+        return `<div class="inst-row ${isActive?'active':''} grid border-b border-border px-3.5 py-2.5"
+                     style="grid-template-columns:1fr 90px 70px 58px" data-id="${inst.id}">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[11px] font-medium text-textb">${inst.id}</span>
+            <span class="text-[9px] text-textdim">${inst.name}</span>
+          </div>
+          <div class="text-right self-center"><span class="text-[11px] text-textb list-price" data-id="${inst.id}">${fmtPrice(p)}</span></div>
+          <div class="text-right self-center"><span class="text-[10px] font-semibold ${pos?'text-gain':'text-loss'}">${pos?'+':''}${inst.change.toFixed(2)}%</span></div>
+          <div class="flex items-center justify-end">${svgSparkline(sparklines[inst.id],pos)}</div>
+        </div>`;
+      }).join('');
+      list.querySelectorAll('.inst-row').forEach(row=>{
+        row.addEventListener('click',()=>{
+          selectedId=row.dataset.id;
+          renderList(); renderDetail(); drawCandleChart(); renderMovers();
+          loadForecast(selectedId);
+          loadLivePrice(selectedId);
+        });
+      });
+    }
+
+    // ── DETAIL PANEL ──────────────────────────────────────────
+    function renderDetail(){
+      const inst=INSTRUMENTS.find(i=>i.id===selectedId);
+      const p=prices[inst.id], pos=inst.change>=0;
+      const ohlc=ohlcData[inst.id], last=ohlc[ohlc.length-1];
+      document.getElementById('detail-icon').textContent=inst.icon;
+      document.getElementById('detail-symbol').textContent=inst.id;
+      document.getElementById('detail-badge').textContent=inst.cat.toUpperCase();
+      document.getElementById('detail-name').textContent=inst.name;
+      document.getElementById('detail-price').textContent=fmtPrice(p);
+      const chEl=document.getElementById('detail-change');
+      chEl.textContent=`${pos?'▲':'▼'} ${Math.abs(inst.change).toFixed(2)}% (24h)`;
+      chEl.className=`text-[13px] font-semibold ${pos?'text-gain':'text-loss'}`;
+      document.getElementById('stat-open').textContent=fmtPrice(last.open);
+      document.getElementById('stat-high').textContent=fmtPrice(last.high);
+      document.getElementById('stat-low').textContent=fmtPrice(last.low);
+      document.getElementById('stat-vol').textContent=inst.vol;
+      document.getElementById('stat-mcap').textContent=inst.mcap;
+    }
+
+    // ── CANDLESTICK CHART ─────────────────────────────────────
+    function drawCandleChart(){
+      const canvas=document.getElementById('candle-chart');
+      const W=canvas.parentElement.clientWidth||700, H=220;
+      canvas.width=W; canvas.height=H;
+      const ctx=canvas.getContext('2d');
+      const pad={top:16,right:12,bottom:28,left:60};
+      const cW=W-pad.left-pad.right, cH=H-pad.top-pad.bottom;
+      const data=ohlcData[selectedId];
+      const allVals=data.flatMap(d=>[d.high,d.low]);
+      const minP=Math.min(...allVals), maxP=Math.max(...allVals), range=maxP-minP||1;
+      const scY=v=>cH-((v-minP)/range)*cH;
+      const spacing=cW/data.length, cw=Math.max(3,spacing*0.6);
+      ctx.clearRect(0,0,W,H);
+      ctx.font='9px JetBrains Mono,monospace'; ctx.fillStyle='#4a7090'; ctx.textAlign='right';
+      for(let i=0;i<5;i++){
+        const v=minP+(range/4)*i, y=pad.top+scY(v);
+        ctx.strokeStyle='#0d2035'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+cW,y); ctx.stroke();
+        ctx.fillText(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(2),pad.left-8,y+4);
+      }
+      data.forEach((d,i)=>{
+        const x=pad.left+i*spacing+spacing/2, color=d.close>=d.open?'#00ff88':'#ff3366';
+        const bodyTop=pad.top+scY(Math.max(d.open,d.close));
+        const bodyBot=pad.top+scY(Math.min(d.open,d.close));
+        const bodyH=Math.max(1,bodyBot-bodyTop);
+        ctx.strokeStyle=color; ctx.lineWidth=1; ctx.globalAlpha=0.7;
+        ctx.beginPath(); ctx.moveTo(x,pad.top+scY(d.high)); ctx.lineTo(x,pad.top+scY(d.low)); ctx.stroke();
+        ctx.fillStyle=color; ctx.globalAlpha=0.85;
+        ctx.fillRect(x-cw/2,bodyTop,cw,bodyH); ctx.globalAlpha=1;
+      });
+    }
+
+    // ── TOP MOVERS ────────────────────────────────────────────
+    function renderMovers(){
+      const sorted=[...INSTRUMENTS].sort((a,b)=>Math.abs(b.change)-Math.abs(a.change)).slice(0,5);
+      document.getElementById('movers-list').innerHTML=sorted.map((inst,idx)=>{
+        const pos=inst.change>=0;
+        return `<div class="flex justify-between items-center py-1.5 ${idx<4?'border-b border-border':''}">
+          <div class="flex items-center gap-2">
+            ${svgSparkline(sparklines[inst.id],pos,52,20)}
+            <div><span class="text-[11px] text-textb font-medium">${inst.id}</span>
+            <span class="text-[9px] text-textdim ml-1.5">${inst.name}</span></div>
+          </div>
+          <span class="text-[11px] font-semibold min-w-[52px] text-right ${pos?'text-gain':'text-loss'}">
+            ${pos?'+':''}${inst.change.toFixed(2)}%
+          </span>
+        </div>`;
+      }).join('');
+    }
+
+    // ── CATEGORY PERFORMANCE ──────────────────────────────────
+    function renderCategoryPerf(){
+      const cats=['crypto','stocks','commodities','etfs','forex'];
+      document.getElementById('category-perf').innerHTML=cats.map(cat=>{
+        const insts=INSTRUMENTS.filter(i=>i.cat===cat);
+        const avg=insts.reduce((s,i)=>s+i.change,0)/insts.length;
+        const pos=avg>=0, barW=Math.min(100,Math.abs(avg)*20);
+        return `<div class="mb-3">
+          <div class="flex justify-between mb-1">
+            <span class="text-[9px] text-textdim tracking-[0.08em]">${cat.toUpperCase()}</span>
+            <span class="text-[10px] font-semibold ${pos?'text-gain':'text-loss'}">${pos?'+':''}${avg.toFixed(2)}%</span>
+          </div>
+          <div class="h-1 bg-border rounded-sm overflow-hidden">
+            <div class="h-full rounded-sm transition-all duration-500 ${pos?'bg-gain':'bg-loss'}" style="width:${barW}%"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── LIVE PRICE SIMULATION ─────────────────────────────────
+    const prevPrices={};
+    function tickPrices(){
+      Object.assign(prevPrices,prices);
+      INSTRUMENTS.forEach(inst=>{
+        const delta=(Math.random()-0.499)*inst.price*0.0004;
+        prices[inst.id]=parseFloat((prices[inst.id]+delta).toFixed(inst.price<10?4:2));
+      });
+      document.querySelectorAll('.ticker-price').forEach(el=>{
+        const id=el.dataset.id; if(id) el.textContent=fmtPrice(prices[id]);
+      });
+      document.querySelectorAll('.list-price').forEach(el=>{
+        const id=el.dataset.id; if(!id) return;
+        el.textContent=fmtPrice(prices[id]);
+        el.classList.remove('flash-up','flash-down'); void el.offsetWidth;
+        el.classList.add(prices[id]>=prevPrices[id]?'flash-up':'flash-down');
+      });
+      const inst=INSTRUMENTS.find(i=>i.id===selectedId);
+      if(inst){
+        const priceEl=document.getElementById('detail-price');
+        priceEl.textContent=fmtPrice(prices[selectedId]);
+        priceEl.classList.remove('flash-up','flash-down'); void priceEl.offsetWidth;
+        priceEl.classList.add(prices[selectedId]>=(prevPrices[selectedId]||0)?'flash-up':'flash-down');
+      }
+    }
+    setInterval(tickPrices,1400);
+
+    // ── CATEGORY FILTER ───────────────────────────────────────
+    document.querySelectorAll('.cat-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        activeCategory=btn.dataset.cat;
+        renderList();
+      });
+    });
+    document.getElementById('search-input').addEventListener('input',e=>{
+      activeSearch=e.target.value; renderList();
+    });
+    document.querySelectorAll('.tf-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.tf-btn').forEach(b=>{b.classList.remove('active');b.classList.add('text-textdim');});
+        btn.classList.add('active'); btn.classList.remove('text-textdim');
+        document.getElementById('active-tf').textContent=btn.dataset.tf;
+        INSTRUMENTS.forEach(inst=>{ohlcData[inst.id]=genOHLC(inst.price,60);});
+        drawCandleChart();
+      });
+    });
+    window.addEventListener('resize',drawCandleChart);
+
+    // ── XGBOOST FORECAST API CALL ─────────────────────────────
+    let forecastCache={};
+
+    function setForecastLoading(loading){
+      document.getElementById('fc-spinner').style.display=loading?'inline-block':'none';
+      document.getElementById('fc-status').textContent=loading?'Running XGBoost model...':'';
+      if(loading){
+        ['1d','1w','1m'].forEach(h=>{
+          document.getElementById(`fc-${h}-price`).textContent='—';
+          document.getElementById(`fc-${h}-chg`).textContent='—';
+          document.getElementById(`fc-${h}-conf`).textContent='computing...';
+          document.getElementById(`fc-${h}`).className='forecast-box';
+        });
+      }
+    }
+
+    function renderForecastBoxes(data){
+      const horizons={
+        '1d':{label:'1D',key:'1d'},
+        '1w':{label:'1W',key:'1w'},
+        '1m':{label:'1M',key:'1m'},
+      };
+      Object.entries(horizons).forEach(([key,meta])=>{
+        const fc=data.forecasts[key];
+        if(!fc) return;
+        const box=document.getElementById(`fc-${key}`);
+        const priceEl=document.getElementById(`fc-${key}-price`);
+        const chgEl=document.getElementById(`fc-${key}-chg`);
+        const confEl=document.getElementById(`fc-${key}-conf`);
+        priceEl.textContent=fmtPriceFull(fc.price);
+        const sign=fc.pct_change>=0?'+':'';
+        chgEl.textContent=`${sign}${fc.pct_change.toFixed(2)}%`;
+        chgEl.style.color=fc.pct_change>=0?'#00ff88':'#ff3366';
+        confEl.textContent=`confidence ${fc.confidence}%`;
+        box.className=`forecast-box ${fc.direction}`;
+      });
+    }
+
+    function renderAiPanel(data){
+      const sentiment=data.sentiment||'—';
+      const sc=sentiment==='BULLISH'?'#00ff88':sentiment==='BEARISH'?'#ff3366':'#ffb800';
+      const scBg=sentiment==='BULLISH'?'rgba(0,255,136,0.07)':sentiment==='BEARISH'?'rgba(255,51,102,0.07)':'rgba(255,184,0,0.07)';
+      const scBorder=sentiment==='BULLISH'?'rgba(0,255,136,0.2)':sentiment==='BEARISH'?'rgba(255,51,102,0.2)':'rgba(255,184,0,0.2)';
+      const box=document.getElementById('ai-sentiment-box');
+      box.style.background=scBg; box.style.border=`1px solid ${scBorder}`;
+      document.getElementById('ai-sent-label').textContent=sentiment;
+      document.getElementById('ai-sent-label').style.color=sc;
+      document.getElementById('ai-conf-val').textContent=(data.avg_confidence||'—')+'%';
+      document.getElementById('ai-conf-val').style.color=sc;
+
+      const sb=data.signal_bars||{};
+      const bars=[
+        {label:'TREND STRENGTH',val:sb.trend_strength||0,color:'#00d4ff'},
+        {label:'VOLATILITY',val:sb.volatility||0,color:'#ffb800'},
+        {label:'VOLUME SIGNAL',val:sb.volume_signal||0,color:'#8899ff'},
+        {label:'MOMENTUM',val:sb.momentum||0,color:'#ff6688'},
+      ];
+      document.getElementById('ai-signal-bars').innerHTML=bars.map(b=>`
+        <div class="ai-signal-bar">
+          <div class="ai-signal-row"><span>${b.label}</span><span style="color:${b.color}">${b.val}%</span></div>
+          <div class="ai-bar-track"><div class="ai-bar-fill" style="width:${b.val}%;background:linear-gradient(90deg,${b.color}55,${b.color})"></div></div>
+        </div>`).join('');
+
+      const fc=data.forecasts||{};
+      const cur=data.current_price||0;
+      const targets=[
+        {label:'Forecast 1D',val:fc['1d']?.price||cur,c:fc['1d']?.pct_change>=0?'#00ff88':'#ff3366'},
+        {label:'Forecast 1W',val:fc['1w']?.price||cur,c:fc['1w']?.pct_change>=0?'#8899ff':'#ff3366'},
+        {label:'Forecast 1M',val:fc['1m']?.price||cur,c:fc['1m']?.pct_change>=0?'#00ff88':'#ff3366'},
+      ];
+      document.getElementById('ai-price-targets').innerHTML=targets.map(t=>`
+        <div class="ai-target-row">
+          <span style="color:#4a7090;">${t.label}</span>
+          <span style="font-weight:800;color:${t.c};font-family:'JetBrains Mono',monospace;">${fmtPriceFull(t.val)}</span>
+        </div>`).join('');
+
+      const md=data.market_data||{};
+      const meta=[
+        {label:'24h High',value:fmtPriceFull(md.high_24||0)},
+        {label:'24h Low',value:fmtPriceFull(md.low_24||0)},
+        {label:'Volume',value:md.volume||'—'},
+        {label:'7d Chg',value:(md.chg_7d>=0?'+':'')+((md.chg_7d||0).toFixed(2))+'%'},
+        {label:'RSI(14)',value:(md.rsi||0).toFixed(1)},
+        {label:'BB %',value:(md.bb_pct||0).toFixed(1)+'%'},
+      ];
+      document.getElementById('ai-market-data').innerHTML=meta.map(m=>`
+        <div class="ai-meta-item">
+          <div class="ai-meta-label">${m.label}</div>
+          <div class="ai-meta-val">${m.value}</div>
+        </div>`).join('');
+
+      const ts=data.technical_signals||{};
+      const signals=[
+        {icon:'◈',label:'MACD Crossover',status:ts.macd?.status||'—',c:ts.macd?.active?'#00d4ff':'#1a3a50'},
+        {icon:'◎',label:'RSI Signal',status:ts.rsi?.status||'—',c:ts.rsi?.active?'#ffb800':'#1a3a50'},
+        {icon:'⬡',label:'Volume Spike',status:ts.volume?.status||'—',c:ts.volume?.active?'#8899ff':'#1a3a50'},
+        {icon:'◉',label:'Support/Resist',status:ts.support?.status||'—',c:ts.support?.active?'#ff6688':'#1a3a50'},
+      ];
+      document.getElementById('ai-signals-list').innerHTML=signals.map(s=>`
+        <div class="ai-sig-row">
+          <div class="ai-sig-left"><span style="color:${s.c}">${s.icon}</span>${s.label}</div>
+          <span class="ai-sig-status" style="color:${s.c}">${s.status}</span>
+        </div>`).join('');
+    }
+
+    async function loadForecast(symbolId){
+      if(forecastCache[symbolId]){
+        renderForecastBoxes(forecastCache[symbolId]);
+        renderAiPanel(forecastCache[symbolId]);
+        return;
+        
+      }
+      setForecastLoading(true);
+      document.getElementById('ai-thinking').classList.add('visible');
+      try{
+        const resp=await fetch(`/api/forecast/${symbolId}/`);
+        if(!resp.ok) throw new Error('Forecast request failed');
+        const data=await resp.json();
+        if(data.error) throw new Error(data.error);
+        
+        // ADD THIS — use the real yfinance price from the trained model
+        if (data.current_price) {
+          document.getElementById('detail-price').textContent = fmtPrice(data.current_price);
+          prices[symbolId] = data.current_price;  // also sync the live-tick baseline
+        }
+        
+        forecastCache[symbolId]=data;
+        renderForecastBoxes(data);
+        renderAiPanel(data);
+        document.getElementById('fc-status').textContent='✓ XGBoost forecast ready';
+        setTimeout(()=>{ document.getElementById('fc-status').textContent=''; },3000);
+      }catch(err){
+        document.getElementById('fc-status').textContent='⚠ '+err.message;
+        ['1d','1w','1m'].forEach(h=>{
+          document.getElementById(`fc-${h}-price`).textContent='ERR';
+          document.getElementById(`fc-${h}-conf`).textContent=err.message.slice(0,30);
+        });
+      }finally{
+        setForecastLoading(false);
+        document.getElementById('ai-thinking').classList.remove('visible');
+      }
+    }
+
+    async function loadLivePrice(symbolId) {
+      const resp = await fetch(`/api/price/${symbolId}/`);
+      const data = await resp.json();
+      if (data.price) {
+        document.getElementById('detail-price').textContent = fmtPrice(data.price);
+      }
+    }
+
+    // ── INIT ──────────────────────────────────────────────────
+    renderList(); renderDetail(); drawCandleChart(); renderMovers(); renderCategoryPerf();
+    loadForecast(selectedId);
+
+  })();
+  </script>
+</body>
+</html>
