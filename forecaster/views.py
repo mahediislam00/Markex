@@ -49,6 +49,30 @@ def index(request):
     }
     return render(request, "forecaster/index.html", context)
 
+<<<<<<< HEAD
+=======
+def tools(request):
+    context = {
+        "instruments_json": json.dumps(INSTRUMENTS),
+    }
+    return render(request, "forecaster/tools.html", context)
+
+def markets(request):
+    context = {
+        "instruments_json": json.dumps(INSTRUMENTS),
+        "categories": CATEGORIES,
+    }
+    return render(request, "forecaster/markets.html", context)
+
+def portfolio(request):
+    context = {
+        "instruments_json": json.dumps(INSTRUMENTS),
+        "instruments": INSTRUMENTS,
+        "categories": CATEGORIES,
+    }
+    return render(request, "forecaster/portfolio.html", context)
+
+>>>>>>> fc5aef7 (Second commit with additional pages- pushing all Markex files)
 @require_GET
 def api_forecast(request, symbol):
     symbol = symbol.upper()
