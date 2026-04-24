@@ -1,0 +1,486 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MARKEX — Contact Us</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+            display: ['Merriweather', 'Georgia', 'serif'],
+            sans: ['Poppins', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            bg:'#050a0e', surface:'#0a1520', border:'#0d2035', borderb:'#1a3a5c',
+            accent:'#00d4ff', accentdim:'#0099bb', gain:'#00ff88', loss:'#ff3366',
+            gold:'#ffb800', textd:'#c8dde8', textdim:'#8ab0cc', textb:'#eaf6ff',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { zoom: 1.25; }
+    body { background:#050a0e; font-family:'Poppins',system-ui,sans-serif; color:#c8dde8; min-height:100vh; }
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:#050a0e; }
+    ::-webkit-scrollbar-thumb { background:#0d2035; border-radius:2px; }
+
+    @keyframes pulse2 { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+    @keyframes fadein { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;} }
+    @keyframes ticker-scroll { from{transform:translateX(0);}to{transform:translateX(-50%);} }
+    @keyframes shimmer { 0%{background-position:-200% 0;}100%{background-position:200% 0;} }
+
+    .live-dot { animation:pulse2 2s infinite; }
+    .ticker-wrap { overflow:hidden; }
+    .ticker-inner { display:flex; gap:2rem; white-space:nowrap; animation:ticker-scroll 30s linear infinite; width:max-content; }
+    .ticker-inner:hover { animation-play-state:paused; }
+
+    .nav-link {
+      font-size:10px; color:#8ab0cc; letter-spacing:0.06em;
+      text-decoration:none; transition:color .15s; font-family:'JetBrains Mono',monospace; font-weight:500;
+    }
+    .nav-link:hover { color:#00d4ff; }
+    .nav-link.active { color:#00d4ff; font-weight:700; }
+
+    .glass-card {
+      background: linear-gradient(135deg, rgba(10,21,32,0.92) 0%, rgba(5,10,20,0.82) 100%);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(0,212,255,0.12);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .section-tag {
+      display:inline-block; font-size:9px; font-family:'JetBrains Mono',monospace;
+      letter-spacing:0.14em; font-weight:700; text-transform:uppercase;
+      padding:4px 12px; border-radius:20px; margin-bottom:12px;
+      background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:#00d4ff;
+    }
+
+    /* FORM STYLES */
+    .form-group { margin-bottom:20px; }
+    .form-label {
+      display:block; font-size:10px; letter-spacing:0.1em; font-family:'JetBrains Mono',monospace;
+      color:#7aadc8; text-transform:uppercase; margin-bottom:7px; font-weight:600;
+    }
+    .form-input {
+      width:100%; background:rgba(3,7,16,0.8); border:1px solid rgba(13,32,53,0.9);
+      border-radius:10px; padding:11px 14px; color:#eaf6ff; font-family:'Poppins',sans-serif;
+      font-size:13px; outline:none; transition:border-color .18s, box-shadow .18s;
+    }
+    .form-input:focus {
+      border-color:rgba(0,212,255,0.4);
+      box-shadow:0 0 0 3px rgba(0,212,255,0.07);
+    }
+    .form-input::placeholder { color:#3a5a70; }
+    textarea.form-input { resize:vertical; min-height:120px; line-height:1.7; }
+    select.form-input option { background:#07101a; color:#c8dde8; }
+
+    /* SUBMIT BUTTON */
+    .submit-btn {
+      width:100%; padding:13px; border-radius:10px; font-family:'JetBrains Mono',monospace;
+      font-size:11px; letter-spacing:0.12em; font-weight:700; cursor:pointer;
+      border:1px solid rgba(0,212,255,0.3); color:#00d4ff;
+      background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.08));
+      transition:all .2s; text-transform:uppercase;
+    }
+    .submit-btn:hover {
+      background:linear-gradient(135deg,rgba(0,212,255,0.26),rgba(0,212,255,0.16));
+      border-color:rgba(0,212,255,0.5); transform:translateY(-1px);
+      box-shadow:0 6px 20px rgba(0,212,255,0.12);
+    }
+    .submit-btn:active { transform:translateY(0); }
+    .submit-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+    /* INFO CARDS */
+    .info-card {
+      background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.12);
+      border-radius:12px; padding:18px 20px; transition:border-color .2s, transform .2s;
+      margin-bottom:12px;
+    }
+    .info-card:hover { border-color:rgba(0,212,255,0.25); transform:translateX(3px); }
+    .info-card.purple {
+      background:rgba(136,153,255,0.04); border-color:rgba(136,153,255,0.12);
+    }
+    .info-card.purple:hover { border-color:rgba(136,153,255,0.28); }
+
+    /* FAQ */
+    .faq-item {
+      border-bottom:1px solid rgba(13,32,53,0.7); padding:16px 0; cursor:pointer;
+    }
+    .faq-item:first-child { padding-top:0; }
+    .faq-item:last-child { border-bottom:none; padding-bottom:0; }
+    .faq-question {
+      display:flex; justify-content:space-between; align-items:center;
+      font-size:13px; color:#eaf6ff; font-weight:500;
+    }
+    .faq-arrow { color:#00d4ff; font-size:11px; transition:transform .2s; }
+    .faq-answer {
+      font-size:12px; color:#8ab0cc; line-height:1.8; margin-top:10px;
+      display:none; padding-right:24px;
+    }
+    .faq-item.open .faq-arrow { transform:rotate(180deg); }
+    .faq-item.open .faq-answer { display:block; }
+
+    /* SUCCESS STATE */
+    #success-banner {
+      display:none; background:rgba(0,255,136,0.07); border:1px solid rgba(0,255,136,0.22);
+      border-radius:12px; padding:16px 20px; text-align:center; margin-top:16px;
+      animation:fadein 0.4s ease forwards;
+    }
+
+    .gradient-divider {
+      height:1px; background:linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent);
+      margin:40px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <header class="flex items-center justify-between px-6 h-[52px] border-b sticky top-0 z-50" style="border-color:#0d2035;background:#07101a;">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-md flex items-center justify-center text-white text-[13px] font-bold"
+           style="background:linear-gradient(135deg,#00d4ff,#0044ff)">M</div>
+      <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:15px;color:#eaf6ff;letter-spacing:0.04em;">MARKEX</span>
+      <span style="font-size:9px;color:#7aadc8;border-left:1px solid #0d2035;padding-left:12px;letter-spacing:0.1em;font-family:'JetBrains Mono',monospace;">XGBoost-Powered Forecasting</span>
+    </div>
+    <nav class="flex items-center gap-5">
+      <a href="/" class="nav-link">DASHBOARD</a>
+      <a href="/markets/" class="nav-link">MARKETS</a>
+      <a href="/tools/" class="nav-link">TOOLS</a>
+      <a href="/portfolio/" class="nav-link">PORTFOLIO</a>
+      <a href="/about/" class="nav-link">ABOUT</a>
+      <a href="/contact/" class="nav-link active">CONTACT</a>
+    </nav>
+    <div class="flex items-center gap-5">
+      <div class="flex items-center gap-1.5">
+        <div class="live-dot w-1.5 h-1.5 rounded-full" style="background:#00ff88;"></div>
+        <span style="font-size:9px;color:#00ff88;letter-spacing:0.1em;font-family:'JetBrains Mono',monospace;">LIVE</span>
+      </div>
+      <span id="clock" style="font-size:9px;color:#8ab0cc;font-family:'JetBrains Mono',monospace;"></span>
+    </div>
+  </header>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap border-b py-1.5" style="border-color:#0d2035;background:#030710;">
+    <div class="ticker-inner text-[10px] tracking-[0.04em]" style="font-family:'JetBrains Mono',monospace;">
+      <span style="color:#8ab0cc;">BTC <span style="color:#eaf6ff;">67,420</span> <span style="color:#00ff88;">▲2.34%</span></span>
+      <span style="color:#8ab0cc;">ETH <span style="color:#eaf6ff;">3,842</span> <span style="color:#ff3366;">▼1.12%</span></span>
+      <span style="color:#8ab0cc;">AAPL <span style="color:#eaf6ff;">228.35</span> <span style="color:#00ff88;">▲1.45%</span></span>
+      <span style="color:#8ab0cc;">NVDA <span style="color:#eaf6ff;">875.20</span> <span style="color:#00ff88;">▲3.21%</span></span>
+      <span style="color:#8ab0cc;">XAU <span style="color:#eaf6ff;">2,312</span> <span style="color:#00ff88;">▲0.34%</span></span>
+      <span style="color:#8ab0cc;">SPY <span style="color:#eaf6ff;">542.10</span> <span style="color:#00ff88;">▲0.88%</span></span>
+      <span style="color:#8ab0cc;">TSLA <span style="color:#eaf6ff;">242.10</span> <span style="color:#ff3366;">▼2.88%</span></span>
+      <span style="color:#8ab0cc;">SOL <span style="color:#eaf6ff;">182.45</span> <span style="color:#00ff88;">▲5.67%</span></span>
+      <!-- duplicate for seamless loop -->
+      <span style="color:#8ab0cc;">BTC <span style="color:#eaf6ff;">67,420</span> <span style="color:#00ff88;">▲2.34%</span></span>
+      <span style="color:#8ab0cc;">ETH <span style="color:#eaf6ff;">3,842</span> <span style="color:#ff3366;">▼1.12%</span></span>
+      <span style="color:#8ab0cc;">AAPL <span style="color:#eaf6ff;">228.35</span> <span style="color:#00ff88;">▲1.45%</span></span>
+      <span style="color:#8ab0cc;">NVDA <span style="color:#eaf6ff;">875.20</span> <span style="color:#00ff88;">▲3.21%</span></span>
+    </div>
+  </div>
+
+  <main class="max-w-[1100px] mx-auto px-6 py-12">
+
+    <!-- PAGE HEADER -->
+    <div class="text-center mb-14" style="animation:fadein 0.5s ease forwards;">
+      <div class="section-tag">Contact Us</div>
+      <h1 style="font-family:'Merriweather',Georgia,serif;font-size:38px;font-weight:900;color:#eaf6ff;line-height:1.2;margin-bottom:14px;">
+        We'd love to hear from you
+      </h1>
+      <p style="font-size:15px;color:#8ab0cc;max-width:500px;margin:0 auto;line-height:1.8;font-weight:300;">
+        Whether it's a bug report, feature suggestion, data inquiry, or partnership proposal — our team responds within 24 hours.
+      </p>
+    </div>
+
+    <!-- MAIN GRID: form + sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 mb-16">
+
+      <!-- CONTACT FORM -->
+      <div class="glass-card p-8" style="animation:fadein 0.5s 0.1s ease both;opacity:0;">
+        <h2 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:700;color:#eaf6ff;margin-bottom:6px;">Send us a message</h2>
+        <p style="font-size:12px;color:#8ab0cc;margin-bottom:24px;">All fields marked * are required.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5">
+          <!-- First Name -->
+          <div class="form-group">
+            <label class="form-label">First Name *</label>
+            <input type="text" id="fname" class="form-input" placeholder="Alex" />
+          </div>
+          <!-- Last Name -->
+          <div class="form-group">
+            <label class="form-label">Last Name *</label>
+            <input type="text" id="lname" class="form-input" placeholder="Chen" />
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <input type="email" id="email" class="form-input" placeholder="alex@example.com" />
+        </div>
+
+        <!-- Subject Category -->
+        <div class="form-group">
+          <label class="form-label">Topic *</label>
+          <select id="topic" class="form-input">
+            <option value="" disabled selected style="color:#3a5a70;">— Select a topic —</option>
+            <option value="bug">🐞 Bug Report</option>
+            <option value="feature">💡 Feature Request</option>
+            <option value="data">📊 Data / Forecast Inquiry</option>
+            <option value="api">🔌 API Access</option>
+            <option value="partnership">🤝 Partnership / Business</option>
+            <option value="press">📰 Press / Media</option>
+            <option value="other">💬 General Inquiry</option>
+          </select>
+        </div>
+
+        <!-- Subject line -->
+        <div class="form-group">
+          <label class="form-label">Subject *</label>
+          <input type="text" id="subject" class="form-input" placeholder="Brief description of your inquiry" />
+        </div>
+
+        <!-- Message -->
+        <div class="form-group">
+          <label class="form-label">Message *</label>
+          <textarea id="message" class="form-input" placeholder="Please describe your inquiry in detail. For bug reports, include the instrument, browser, and steps to reproduce."></textarea>
+        </div>
+
+        <!-- Optional: attach symbol -->
+        <div class="form-group">
+          <label class="form-label">Related Symbol <span style="color:#4a7090;font-size:9px;">(optional)</span></label>
+          <input type="text" id="symbol" class="form-input" placeholder="e.g. BTC, AAPL, EURUSD" style="text-transform:uppercase;" />
+        </div>
+
+        <!-- Validation error -->
+        <div id="form-error" style="display:none;background:rgba(255,51,102,0.07);border:1px solid rgba(255,51,102,0.2);border-radius:9px;padding:12px 16px;font-size:12px;color:#ff6688;margin-bottom:16px;"></div>
+
+        <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
+          SEND MESSAGE →
+        </button>
+
+        <!-- Success banner -->
+        <div id="success-banner">
+          <div style="font-size:22px;margin-bottom:6px;">✅</div>
+          <div style="font-size:14px;font-weight:600;color:#00ff88;margin-bottom:4px;">Message sent successfully!</div>
+          <div style="font-size:12px;color:#8ab0cc;">Thank you — we'll get back to you within 24 hours.</div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div>
+        <!-- Contact Info -->
+        <div style="animation:fadein 0.5s 0.18s ease both;opacity:0;margin-bottom:12px;">
+          <div class="info-card">
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:9px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📧</div>
+              <div>
+                <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#7aadc8;letter-spacing:0.08em;margin-bottom:3px;">EMAIL</div>
+                <div style="font-size:13px;color:#eaf6ff;font-weight:500;">hello@markex.io</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card purple">
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:9px;background:rgba(136,153,255,0.1);border:1px solid rgba(136,153,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🐙</div>
+              <div>
+                <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#7aadc8;letter-spacing:0.08em;margin-bottom:3px;">GITHUB</div>
+                <div style="font-size:13px;color:#eaf6ff;font-weight:500;">github.com/markex-io</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:9px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🐦</div>
+              <div>
+                <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#7aadc8;letter-spacing:0.08em;margin-bottom:3px;">TWITTER / X</div>
+                <div style="font-size:13px;color:#eaf6ff;font-weight:500;">@markex_io</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card purple">
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:9px;background:rgba(136,153,255,0.1);border:1px solid rgba(136,153,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">⏱️</div>
+              <div>
+                <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#7aadc8;letter-spacing:0.08em;margin-bottom:3px;">RESPONSE TIME</div>
+                <div style="font-size:13px;color:#eaf6ff;font-weight:500;">Within 24 hours</div>
+                <div style="font-size:11px;color:#8ab0cc;margin-top:2px;">Mon–Fri · UTC+0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="glass-card p-5" style="animation:fadein 0.5s 0.26s ease both;opacity:0;margin-bottom:12px;">
+          <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#7aadc8;letter-spacing:0.1em;margin-bottom:14px;font-weight:700;">⚡ SYSTEM STATUS</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:12px;color:#8ab0cc;">API & Data Feed</span>
+              <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#00ff88;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);padding:2px 9px;border-radius:20px;">OPERATIONAL</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:12px;color:#8ab0cc;">XGBoost Engine</span>
+              <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#00ff88;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);padding:2px 9px;border-radius:20px;">OPERATIONAL</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:12px;color:#8ab0cc;">Dashboard UI</span>
+              <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#00ff88;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);padding:2px 9px;border-radius:20px;">OPERATIONAL</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:12px;color:#8ab0cc;">Portfolio Tracker</span>
+              <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#00ff88;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);padding:2px 9px;border-radius:20px;">OPERATIONAL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gradient-divider"></div>
+
+    <!-- FAQ SECTION -->
+    <div style="max-width:700px;margin:0 auto 48px;">
+      <div class="text-center mb-8">
+        <div class="section-tag">FAQ</div>
+        <h2 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:700;color:#eaf6ff;">Frequently Asked Questions</h2>
+      </div>
+
+      <div class="glass-card p-8" style="animation:fadein 0.5s 0.3s ease both;opacity:0;">
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>How often is market data updated?</span>
+            <span class="faq-arrow">▾</span>
+          </div>
+          <div class="faq-answer">
+            Prices are refreshed every 12 minutes, aligned to Yahoo Finance's yfinance data pipeline which typically updates every 10 minutes. The XGBoost forecasts are cached for 10 minutes per symbol and regenerated on the next request after expiry.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>Can I access the Markex API directly?</span>
+            <span class="faq-arrow">▾</span>
+          </div>
+          <div class="faq-answer">
+            Markex exposes REST endpoints for price data and XGBoost forecasts (e.g. <code style="font-family:'JetBrains Mono',monospace;color:#00d4ff;font-size:11px;">/api/forecast/BTC/</code>). Direct API access for third-party integrations is available — reach out via the contact form with topic "API Access".
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>Are the forecasts financial advice?</span>
+            <span class="faq-arrow">▾</span>
+          </div>
+          <div class="faq-answer">
+            No. Markex forecasts are generated by machine learning models for informational and educational purposes only. They do not constitute financial advice, and we strongly recommend consulting a qualified financial advisor before making investment decisions.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>Which instruments are currently supported?</span>
+            <span class="faq-arrow">▾</span>
+          </div>
+          <div class="faq-answer">
+            Markex currently supports 20+ instruments across 5 asset classes: Crypto (BTC, ETH, SOL, BNB, XRP), Stocks (AAPL, NVDA, MSFT, TSLA, AMZN), Commodities (XAU, XAG, OIL, NG), ETFs (SPY, QQQ, VTI), and Forex (EUR/USD, GBP/USD, USD/JPY). More instruments are added regularly.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>How do I report an incorrect forecast or price?</span>
+            <span class="faq-arrow">▾</span>
+          </div>
+          <div class="faq-answer">
+            Use the contact form above and select "Bug Report" or "Data / Forecast Inquiry". Please include the instrument symbol, the value you saw, the expected value, and the approximate time of the discrepancy. We investigate all data quality reports within 24 hours.
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>Can I request a new instrument or feature?</span>
+            <span class="faq-arrow">▾</span>
+          </div>
+          <div class="faq-answer">
+            Absolutely. Select "Feature Request" from the topic dropdown and describe what you'd like to see. We prioritize additions based on user demand, so the more specific your request, the better chance it has of making it into the next release.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer style="border-top:1px solid #0d2035;background:#030710;padding:20px 24px;text-align:center;">
+    <span style="font-size:10px;color:#7aadc8;font-family:'JetBrains Mono',monospace;letter-spacing:0.06em;">
+      MARKEX © 2025 · XGBoost-Powered Financial Intelligence · <a href="/about/" style="color:#00d4ff;text-decoration:none;">About</a> · <a href="/contact/" style="color:#00d4ff;text-decoration:none;">Contact</a>
+    </span>
+  </footer>
+
+  <script>
+    // CLOCK
+    function updateClock() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB',{timeZone:'UTC'}) + ' UTC';
+    }
+    updateClock(); setInterval(updateClock, 1000);
+
+    // FAQ TOGGLE
+    function toggleFaq(el) {
+      el.classList.toggle('open');
+    }
+
+    // FORM SUBMIT
+    function handleSubmit() {
+      const fname = document.getElementById('fname').value.trim();
+      const lname = document.getElementById('lname').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const topic = document.getElementById('topic').value;
+      const subject = document.getElementById('subject').value.trim();
+      const message = document.getElementById('message').value.trim();
+
+      const errEl = document.getElementById('form-error');
+      errEl.style.display = 'none';
+
+      // Validation
+      if (!fname || !lname) { showError('Please enter your first and last name.'); return; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Please enter a valid email address.'); return; }
+      if (!topic) { showError('Please select a topic.'); return; }
+      if (!subject) { showError('Please enter a subject.'); return; }
+      if (message.length < 20) { showError('Please provide a more detailed message (at least 20 characters).'); return; }
+
+      // Simulate sending
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'SENDING...';
+
+      setTimeout(() => {
+        btn.style.display = 'none';
+        document.getElementById('success-banner').style.display = 'block';
+        // Reset form
+        ['fname','lname','email','subject','message','symbol'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('topic').selectedIndex = 0;
+      }, 1200);
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('form-error');
+      el.textContent = '⚠ ' + msg;
+      el.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1043 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MARKEX — Financial Tools</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+            display: ['Merriweather', 'Georgia', 'serif'],
+            sans: ['Poppins', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            bg:'#050a0e', surface:'#0a1520', border:'#0d2035', borderb:'#1a3a5c',
+            accent:'#00d4ff', accentdim:'#0099bb', gain:'#00ff88', loss:'#ff3366',
+            gold:'#ffb800', textd:'#c8dde8', textdim:'#4a7090', textb:'#eaf6ff',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { zoom: 1.25; }
+    body { background:#050a0e; font-family:'Poppins',system-ui,sans-serif; color:#c8dde8; min-height:100vh; }
+    ::-webkit-scrollbar { width:4px; height:4px; }
+    ::-webkit-scrollbar-track { background:#050a0e; }
+    ::-webkit-scrollbar-thumb { background:#0d2035; border-radius:2px; }
+
+    @keyframes pulse2 { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+    @keyframes ticker-scroll { from{transform:translateX(0);}to{transform:translateX(-50%);} }
+    @keyframes fadein { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;} }
+    @keyframes float { 0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);} }
+    @keyframes glow-pulse { 0%,100%{box-shadow:0 0 20px rgba(0,212,255,0.08);}50%{box-shadow:0 0 40px rgba(0,212,255,0.18);} }
+
+    .live-dot { animation:pulse2 2s infinite; }
+    .ticker-wrap { overflow:hidden; }
+    .ticker-inner { display:flex; gap:2rem; white-space:nowrap; animation:ticker-scroll 30s linear infinite; width:max-content; }
+    .ticker-inner:hover { animation-play-state:paused; }
+
+    /* LIQUID GLASS */
+    .glass-card {
+      background: linear-gradient(135deg, rgba(10,21,32,0.85) 0%, rgba(5,10,20,0.75) 100%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(0,212,255,0.12);
+      border-radius: 18px;
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.5),
+        0 2px 8px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        inset 0 -1px 0 rgba(0,212,255,0.04);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      animation: fadein 0.4s ease forwards;
+    }
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 20% 0%, rgba(0,212,255,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      border-radius: inherit;
+    }
+    .glass-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(0,212,255,0.25);
+      box-shadow:
+        0 16px 48px rgba(0,0,0,0.6),
+        0 4px 12px rgba(0,212,255,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 -1px 0 rgba(0,212,255,0.06);
+    }
+    /* gold/gain/loss variants replaced with blue/purple only */
+    .glass-card.purple-variant {
+      border-color: rgba(136,153,255,0.12);
+    }
+    .glass-card.purple-variant::before {
+      background: radial-gradient(ellipse at 20% 0%, rgba(136,153,255,0.07) 0%, transparent 60%);
+    }
+    .glass-card.purple-variant:hover {
+      border-color: rgba(136,153,255,0.28);
+    }
+
+    /* TOOL ICON */
+    .tool-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+
+    /* INPUTS */
+    .glass-input {
+      background: rgba(3,7,16,0.7);
+      border: 1px solid rgba(13,32,53,0.8);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #eaf6ff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .glass-input:focus {
+      border-color: rgba(0,212,255,0.4);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.06);
+    }
+    .glass-input::placeholder { color: #7aadc8; }
+    select.glass-input option { background: #07101a; color: #c8dde8; }
+
+    /* RESULT BOX */
+    .result-box {
+      background: rgba(0,212,255,0.04);
+      border: 1px solid rgba(0,212,255,0.12);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-top: 12px;
+    }
+    .result-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 900;
+      color: #eaf6ff;
+    }
+    .result-val.gain-col { color: #00ff88; }
+    .result-val.gold-col { color: #8899ff; }
+    .result-val.loss-col { color: #ff3366; }
+    .result-val.purple-col { color: #8899ff; }
+
+    /* CALC BTN */
+    .calc-btn {
+      background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.08));
+      border: 1px solid rgba(0,212,255,0.25);
+      border-radius: 8px;
+      color: #00d4ff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      text-transform: uppercase;
+    }
+    .calc-btn:hover {
+      background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,212,255,0.15));
+      border-color: rgba(0,212,255,0.45);
+      transform: translateY(-1px);
+    }
+    .calc-btn:active { transform: translateY(0); }
+    .calc-btn.gold {
+      background: linear-gradient(135deg, rgba(136,153,255,0.15), rgba(136,153,255,0.08));
+      border-color: rgba(136,153,255,0.25);
+      color: #8899ff;
+    }
+    .calc-btn.gold:hover {
+      background: linear-gradient(135deg, rgba(136,153,255,0.28), rgba(136,153,255,0.16));
+      border-color: rgba(136,153,255,0.45);
+    }
+    .calc-btn.gain {
+      background: linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,255,136,0.06));
+      border-color: rgba(0,255,136,0.25);
+      color: #00ff88;
+    }
+    .calc-btn.gain:hover {
+      background: linear-gradient(135deg, rgba(0,255,136,0.22), rgba(0,255,136,0.14));
+      border-color: rgba(0,255,136,0.45);
+    }
+    .calc-btn.loss {
+      background: linear-gradient(135deg, rgba(255,51,102,0.12), rgba(255,51,102,0.06));
+      border-color: rgba(255,51,102,0.25);
+      color: #ff3366;
+    }
+    .calc-btn.loss:hover {
+      background: linear-gradient(135deg, rgba(255,51,102,0.22), rgba(255,51,102,0.14));
+      border-color: rgba(255,51,102,0.45);
+    }
+    .calc-btn.purple {
+      background: linear-gradient(135deg, rgba(136,153,255,0.12), rgba(136,153,255,0.06));
+      border-color: rgba(136,153,255,0.25);
+      color: #8899ff;
+    }
+    .calc-btn.purple:hover {
+      background: linear-gradient(135deg, rgba(136,153,255,0.22), rgba(136,153,255,0.14));
+      border-color: rgba(136,153,255,0.45);
+    }
+
+    /* FIELD LABEL */
+    .field-label { font-size: 9px; color: #7aadc8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px; }
+
+    /* NAV */
+    .nav-link { font-size: 10px; color: #8ab0cc; letter-spacing: 0.06em; transition: color 0.15s; cursor: pointer; text-decoration: none; }
+    .nav-link:hover { color: #00d4ff; }
+    .nav-link.active { color: #00d4ff; }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 6px;
+    }
+    .section-header .tool-badge {
+      font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    /* DIVIDER */
+    .glass-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent);
+      margin: 6px 0;
+    }
+
+    /* TOOLTIP / breakdown row */
+    .breakdown-row {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: #8ab0cc; margin-bottom: 4px;
+    }
+    .breakdown-row span:last-child { color: #c8dde8; }
+
+    /* RANGE SLIDER */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%; height: 3px;
+      background: rgba(13,32,53,0.9);
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #00d4ff;
+      box-shadow: 0 0 8px rgba(0,212,255,0.4);
+      cursor: pointer;
+    }
+
+    /* ANIMATE CARDS IN */
+    .glass-card:nth-child(1) { animation-delay: 0.05s; }
+    .glass-card:nth-child(2) { animation-delay: 0.1s; }
+    .glass-card:nth-child(3) { animation-delay: 0.15s; }
+    .glass-card:nth-child(4) { animation-delay: 0.2s; }
+    .glass-card:nth-child(5) { animation-delay: 0.25s; }
+    .glass-card:nth-child(6) { animation-delay: 0.3s; }
+    .glass-card:nth-child(7) { animation-delay: 0.35s; }
+    .glass-card:nth-child(8) { animation-delay: 0.4s; }
+    .glass-card { opacity: 0; }
+
+    /* BACKGROUND MESH */
+    .bg-mesh {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 600px 400px at 10% 20%, rgba(0,212,255,0.04) 0%, transparent 70%),
+        radial-gradient(ellipse 500px 300px at 85% 70%, rgba(136,153,255,0.03) 0%, transparent 70%),
+        radial-gradient(ellipse 400px 250px at 50% 100%, rgba(0,255,136,0.025) 0%, transparent 70%);
+    }
+
+    /* MINI CHART for DCA */
+    .mini-bar { display:inline-block; background: rgba(0,212,255,0.3); border-radius: 2px; margin-right: 2px; vertical-align: bottom; }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen bg-bg text-textd font-mono">
+  <div class="bg-mesh"></div>
+
+  <!-- TOP NAV -->
+  <header class="flex items-center justify-between px-6 h-[52px] border-b border-border shrink-0 sticky top-0 z-50"
+          style="background:rgba(5,10,14,0.92);backdrop-filter:blur(20px);">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-md flex items-center justify-center text-white text-[13px] font-bold"
+           style="background:linear-gradient(135deg,#00d4ff,#0044ff)">M</div>
+      <span class="font-display font-extrabold text-[15px] text-textb tracking-[0.04em]">MARKEX</span>
+      <span class="text-[9px] text-textdim border-l border-border pl-3 tracking-[0.1em]">XGBoost-Powered Forecasting</span>
+    </div>
+    <nav class="flex items-center gap-6">
+      <a href="/" class="nav-link">DASHBOARD</a>
+      <a href="/markets/" class="nav-link">MARKETS</a>
+      <a href="/tools/" class="nav-link active">TOOLS</a>
+      <a href="/portfolio/" class="nav-link">PORTFOLIO</a>
+      <a href="/about/" class="nav-link">ABOUT</a>
+      <a href="/contact/" class="nav-link">CONTACT</a>
+    </nav>
+    <div class="flex items-center gap-5">
+      <div class="flex items-center gap-1.5">
+        <div class="live-dot w-1.5 h-1.5 rounded-full bg-gain"></div>
+        <span class="text-[9px] text-gain tracking-[0.1em]">LIVE</span>
+      </div>
+      <span id="clock" class="text-[9px] text-textdim"></span>
+    </div>
+  </header>
+
+  <!-- TICKER STRIP -->
+  <div class="ticker-wrap shrink-0 border-b border-border py-1.5 sticky top-[52px] z-40" style="background:#030710">
+    <div class="ticker-inner text-[10px] tracking-[0.04em]" id="ticker-inner"></div>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="relative z-10 px-8 pt-10 pb-6 border-b border-border"
+       style="background:linear-gradient(180deg,rgba(10,21,32,0.5) 0%,transparent 100%)">
+    <div class="flex items-end justify-between">
+      <div>
+        <div class="text-[9px] text-textdim tracking-[0.2em] mb-2">⚙ FINANCIAL TOOLS</div>
+        <h1 class="font-display font-extrabold text-[32px] text-textb tracking-[-0.02em] leading-none">
+          Precision Calculators
+        </h1>
+        <p class="text-[11px] text-textdim mt-2">8 professional-grade tools for smarter financial decisions</p>
+      </div>
+      <div class="flex gap-3">
+        <div class="glass-card px-4 py-3" style="animation-delay:0s;opacity:1;">
+          <div class="text-[8px] text-textdim tracking-[0.1em] mb-1">TOOLS AVAILABLE</div>
+          <div class="font-display text-[20px] font-extrabold text-accent">8</div>
+        </div>
+        <div class="glass-card px-4 py-3 gold-variant" style="animation-delay:0s;opacity:1;">
+          <div class="text-[8px] text-textdim tracking-[0.1em] mb-1">CATEGORIES</div>
+          <div class="font-display text-[20px] font-extrabold text-gold">5</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLS GRID -->
+  <main class="relative z-10 p-8">
+    <!-- Tool Selector Dropdown -->
+    <div class="mb-8 flex items-center gap-4">
+      <span style="font-size:11px;color:#7aadc8;letter-spacing:0.1em;font-family:'Poppins',sans-serif;font-weight:600;">JUMP TO TOOL:</span>
+      <div style="position:relative;display:inline-block;">
+        <select id="tool-selector" onchange="document.getElementById(this.value).scrollIntoView({behavior:'smooth',block:'start'})"
+          style="appearance:none;-webkit-appearance:none;background:rgba(10,21,32,0.95);border:1px solid rgba(0,212,255,0.3);border-radius:10px;padding:9px 40px 9px 16px;color:#eaf6ff;font-family:'Poppins',sans-serif;font-size:12px;font-weight:500;cursor:pointer;min-width:280px;outline:none;letter-spacing:0.02em;box-shadow:0 4px 16px rgba(0,212,255,0.08);">
+          <option value="" style="background:#07101a;color:#7aadc8;">— Select a tool —</option>
+          <option value="tool-compound" style="background:#07101a">📈  Compound Interest Calculator</option>
+          <option value="tool-sip" style="background:#07101a">💰  SIP Calculator</option>
+          <option value="tool-loan" style="background:#07101a">🏦  Loan EMI Calculator</option>
+          <option value="tool-position" style="background:#07101a">📐  Position Size Calculator</option>
+          <option value="tool-rr" style="background:#07101a">⚖️  Risk / Reward Ratio</option>
+          <option value="tool-currency" style="background:#07101a">💱  Currency Converter</option>
+          <option value="tool-dca" style="background:#07101a">📊  DCA Calculator</option>
+          <option value="tool-pnl" style="background:#07101a">💹  P&amp;L Calculator</option>
+          <option value="tool-breakeven" style="background:#07101a">🎯  Break-Even Calculator</option>
+        </select>
+        <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#00d4ff;pointer-events:none;font-size:12px;">▾</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="tools-grid">
+
+      <!-- ═══ 1. COMPOUND INTEREST ═══ -->
+      <div id="tool-compound" class="glass-card p-6">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.06))">
+            <span style="color:#00d4ff">⬡</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">Compound Interest</div>
+            <div class="text-[9px] text-textdim mt-0.5">Growth over time with compounding</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Principal ($)</div>
+            <input class="glass-input" id="ci-principal" type="number" value="10000" min="0" />
+          </div>
+          <div>
+            <div class="field-label">Annual Rate (%)</div>
+            <input class="glass-input" id="ci-rate" type="number" value="8" step="0.1" min="0" />
+          </div>
+          <div>
+            <div class="field-label">Years</div>
+            <input class="glass-input" id="ci-years" type="number" value="10" min="1" />
+          </div>
+          <div>
+            <div class="field-label">Compound Freq.</div>
+            <select class="glass-input" id="ci-freq">
+              <option value="1">Annually</option>
+              <option value="4">Quarterly</option>
+              <option value="12" selected>Monthly</option>
+              <option value="365">Daily</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="calc-btn w-full mt-4" onclick="calcCI()">CALCULATE GROWTH</button>
+
+        <div class="result-box" id="ci-result" style="display:none">
+          <div class="breakdown-row"><span>Principal</span><span id="ci-r-principal">—</span></div>
+          <div class="breakdown-row"><span>Interest Earned</span><span id="ci-r-interest" style="color:#00ff88">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">FINAL AMOUNT</div>
+          <div class="result-val gain-col" id="ci-r-total">—</div>
+          <div class="text-[9px] text-textdim mt-1" id="ci-r-note">—</div>
+        </div>
+      </div>
+
+      <!-- ═══ 2. SIP CALCULATOR ═══ -->
+      <div id="tool-sip" class="glass-card p-6 purple-variant">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(136,153,255,0.15),rgba(136,153,255,0.06))">
+            <span style="color:#ffb800">◈</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">SIP Calculator</div>
+            <div class="text-[9px] text-textdim mt-0.5">Systematic investment planning</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Monthly Amount ($)</div>
+            <input class="glass-input" id="sip-monthly" type="number" value="500" min="1" />
+          </div>
+          <div>
+            <div class="field-label">Expected Return (%)</div>
+            <input class="glass-input" id="sip-rate" type="number" value="12" step="0.1" min="0" />
+          </div>
+          <div class="col-span-2">
+            <div class="field-label">Investment Period (Years): <span id="sip-yr-label" style="color:#ffb800">15</span></div>
+            <input type="range" id="sip-years" min="1" max="40" value="15" oninput="document.getElementById('sip-yr-label').textContent=this.value"
+                   style="accent-color:#ffb800" />
+          </div>
+        </div>
+
+        <button class="calc-btn gold w-full mt-4" onclick="calcSIP()">CALCULATE SIP</button>
+
+        <div class="result-box" id="sip-result" style="display:none;border-color:rgba(255,184,0,0.15);background:rgba(255,184,0,0.04)">
+          <div class="breakdown-row"><span>Total Invested</span><span id="sip-r-invested">—</span></div>
+          <div class="breakdown-row"><span>Est. Returns</span><span id="sip-r-returns" style="color:#ffb800">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">TOTAL CORPUS</div>
+          <div class="result-val gold-col" id="sip-r-total">—</div>
+          <div class="text-[9px] text-textdim mt-1" id="sip-r-note">—</div>
+        </div>
+      </div>
+
+      <!-- ═══ 3. LOAN EMI ═══ -->
+      <div id="tool-loan" class="glass-card p-6">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.06))">
+            <span style="color:#ff3366">◎</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">Loan EMI Calculator</div>
+            <div class="text-[9px] text-textdim mt-0.5">Monthly installment & interest breakdown</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Loan Amount ($)</div>
+            <input class="glass-input" id="emi-principal" type="number" value="250000" min="1" />
+          </div>
+          <div>
+            <div class="field-label">Annual Rate (%)</div>
+            <input class="glass-input" id="emi-rate" type="number" value="7.5" step="0.1" min="0.1" />
+          </div>
+          <div>
+            <div class="field-label">Tenure (Months)</div>
+            <input class="glass-input" id="emi-months" type="number" value="240" min="1" />
+          </div>
+          <div>
+            <div class="field-label">Loan Type</div>
+            <select class="glass-input" id="emi-type">
+              <option value="reducing" selected>Reducing Balance</option>
+              <option value="flat">Flat Rate</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="calc-btn loss w-full mt-4" onclick="calcEMI()">CALCULATE EMI</button>
+
+        <div class="result-box" id="emi-result" style="display:none;border-color:rgba(255,51,102,0.15);background:rgba(255,51,102,0.04)">
+          <div class="breakdown-row"><span>Monthly EMI</span><span id="emi-r-emi" style="color:#ff3366;font-weight:800">—</span></div>
+          <div class="breakdown-row"><span>Total Payment</span><span id="emi-r-total">—</span></div>
+          <div class="breakdown-row"><span>Total Interest</span><span id="emi-r-interest" style="color:#ff3366">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">EFFECTIVE COST</div>
+          <div class="result-val loss-col" id="emi-r-eff">—</div>
+          <div class="text-[9px] text-textdim mt-1" id="emi-r-note">—</div>
+        </div>
+      </div>
+
+      <!-- ═══ 4. POSITION SIZE ═══ -->
+      <div id="tool-position" class="glass-card p-6 purple-variant">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(136,153,255,0.15),rgba(136,153,255,0.06))">
+            <span style="color:#00ff88">◉</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">Position Size Calculator</div>
+            <div class="text-[9px] text-textdim mt-0.5">Risk-based position sizing</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Account Size ($)</div>
+            <input class="glass-input" id="ps-account" type="number" value="50000" min="1" />
+          </div>
+          <div>
+            <div class="field-label">Risk Per Trade (%)</div>
+            <input class="glass-input" id="ps-risk" type="number" value="2" step="0.1" min="0.1" max="100" />
+          </div>
+          <div>
+            <div class="field-label">Entry Price ($)</div>
+            <input class="glass-input" id="ps-entry" type="number" value="100" step="0.01" min="0.01" />
+          </div>
+          <div>
+            <div class="field-label">Stop Loss ($)</div>
+            <input class="glass-input" id="ps-stop" type="number" value="95" step="0.01" min="0.01" />
+          </div>
+        </div>
+
+        <button class="calc-btn gain w-full mt-4" onclick="calcPS()">CALCULATE POSITION</button>
+
+        <div class="result-box" id="ps-result" style="display:none;border-color:rgba(0,255,136,0.15);background:rgba(0,255,136,0.04)">
+          <div class="breakdown-row"><span>Risk Amount ($)</span><span id="ps-r-risk" style="color:#ff3366">—</span></div>
+          <div class="breakdown-row"><span>Stop Distance</span><span id="ps-r-stop">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">POSITION SIZE (UNITS)</div>
+          <div class="result-val gain-col" id="ps-r-units">—</div>
+          <div class="text-[9px]  text-textdim mt-1" id="ps-r-value">—</div>
+        </div>
+      </div>
+
+      <!-- ═══ 5. RISK / REWARD ═══ -->
+      <div id="tool-rr" class="glass-card p-6 purple-variant">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(136,153,255,0.15),rgba(136,153,255,0.06))">
+            <span style="color:#8899ff">⚖</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">Risk / Reward Ratio</div>
+            <div class="text-[9px] text-textdim mt-0.5">Trade viability analysis</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Entry Price ($)</div>
+            <input class="glass-input" id="rr-entry" type="number" value="150.00" step="0.01" min="0.01" />
+          </div>
+          <div>
+            <div class="field-label">Target Price ($)</div>
+            <input class="glass-input" id="rr-target" type="number" value="165.00" step="0.01" min="0.01" />
+          </div>
+          <div>
+            <div class="field-label">Stop Loss ($)</div>
+            <input class="glass-input" id="rr-stop" type="number" value="145.00" step="0.01" min="0.01" />
+          </div>
+          <div>
+            <div class="field-label">Trade Direction</div>
+            <select class="glass-input" id="rr-dir">
+              <option value="long" selected>Long (Buy)</option>
+              <option value="short">Short (Sell)</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="calc-btn purple w-full mt-4" onclick="calcRR()">ANALYZE TRADE</button>
+
+        <div class="result-box" id="rr-result" style="display:none;border-color:rgba(136,153,255,0.15);background:rgba(136,153,255,0.04)">
+          <div class="breakdown-row"><span>Potential Profit</span><span id="rr-r-profit" style="color:#00ff88">—</span></div>
+          <div class="breakdown-row"><span>Potential Loss</span><span id="rr-r-loss" style="color:#ff3366">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">RISK:REWARD RATIO</div>
+          <div class="result-val purple-col" id="rr-r-ratio">—</div>
+          <div class="text-[9px] text-textdim mt-1" id="rr-r-verdict">—</div>
+        </div>
+      </div>
+
+      <!-- ═══ 6. CURRENCY CONVERTER ═══ -->
+      <div id="tool-currency" class="glass-card p-6">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.06))">
+            <span style="color:#00d4ff">⇄</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">Currency Converter</div>
+            <div class="text-[9px] text-textdim mt-0.5">Live-rate based conversion</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Amount</div>
+            <input class="glass-input" id="fx-amount" type="number" value="1000" min="0.01" />
+          </div>
+          <div></div>
+          <div>
+            <div class="field-label">From Currency</div>
+            <select class="glass-input" id="fx-from">
+              <option value="USD" selected>USD — US Dollar</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="GBP">GBP — British Pound</option>
+              <option value="JPY">JPY — Japanese Yen</option>
+              <option value="BTC">BTC — Bitcoin</option>
+              <option value="ETH">ETH — Ethereum</option>
+              <option value="AUD">AUD — Australian Dollar</option>
+              <option value="CAD">CAD — Canadian Dollar</option>
+              <option value="CHF">CHF — Swiss Franc</option>
+              <option value="CNY">CNY — Chinese Yuan</option>
+              <option value="INR">INR — Indian Rupee</option>
+              <option value="SGD">SGD — Singapore Dollar</option>
+              <option value="BDT">BDT — Bangladesh Taka</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-label">To Currency</div>
+            <select class="glass-input" id="fx-to">
+              <option value="EUR" selected>EUR — Euro</option>
+              <option value="USD">USD — US Dollar</option>
+              <option value="GBP">GBP — British Pound</option>
+              <option value="JPY">JPY — Japanese Yen</option>
+              <option value="BTC">BTC — Bitcoin</option>
+              <option value="ETH">ETH — Ethereum</option>
+              <option value="AUD">AUD — Australian Dollar</option>
+              <option value="CAD">CAD — Canadian Dollar</option>
+              <option value="CHF">CHF — Swiss Franc</option>
+              <option value="CNY">CNY — Chinese Yuan</option>
+              <option value="INR">INR — Indian Rupee</option>
+              <option value="SGD">SGD — Singapore Dollar</option>
+              <option value="BDT">BDT — Bangladesh Taka</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="calc-btn w-full mt-4" onclick="calcFX()">CONVERT</button>
+
+        <div class="result-box" id="fx-result" style="display:none;">
+          <div class="breakdown-row"><span id="fx-r-rate-label">Rate</span><span id="fx-r-rate">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">CONVERTED AMOUNT</div>
+          <div class="result-val" id="fx-r-total" style="color:#00d4ff">—</div>
+          <div class="text-[9px] text-textdim mt-1" id="fx-r-note">Based on indicative rates</div>
+        </div>
+      </div>
+
+      <!-- ═══ 7. DCA CALCULATOR ═══ -->
+      <div id="tool-dca" class="glass-card p-6 purple-variant">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(136,153,255,0.15),rgba(136,153,255,0.06))">
+            <span style="color:#ffb800">📈</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">DCA Calculator</div>
+            <div class="text-[9px] text-textdim mt-0.5">Dollar-cost averaging strategy</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Recurring Amount ($)</div>
+            <input class="glass-input" id="dca-amount" type="number" value="200" min="1" />
+          </div>
+          <div>
+            <div class="field-label">Frequency</div>
+            <select class="glass-input" id="dca-freq">
+              <option value="7">Weekly</option>
+              <option value="30" selected>Monthly</option>
+              <option value="90">Quarterly</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-label">Initial Price ($)</div>
+            <input class="glass-input" id="dca-init-price" type="number" value="45000" step="0.01" />
+          </div>
+          <div>
+            <div class="field-label">Current Price ($)</div>
+            <input class="glass-input" id="dca-cur-price" type="number" value="67000" step="0.01" />
+          </div>
+          <div class="col-span-2">
+            <div class="field-label">Duration (Months): <span id="dca-dur-label" style="color:#ffb800">24</span></div>
+            <input type="range" id="dca-duration" min="1" max="120" value="24"
+                   oninput="document.getElementById('dca-dur-label').textContent=this.value"
+                   style="accent-color:#ffb800" />
+          </div>
+        </div>
+
+        <button class="calc-btn gold w-full mt-4" onclick="calcDCA()">SIMULATE DCA</button>
+
+        <div class="result-box" id="dca-result" style="display:none;border-color:rgba(255,184,0,0.15);background:rgba(255,184,0,0.04)">
+          <div class="breakdown-row"><span>Total Invested</span><span id="dca-r-invested">—</span></div>
+          <div class="breakdown-row"><span>Avg Cost Basis</span><span id="dca-r-avg">—</span></div>
+          <div class="breakdown-row"><span>Unrealized P/L</span><span id="dca-r-pnl">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">PORTFOLIO VALUE</div>
+          <div class="result-val gold-col" id="dca-r-value">—</div>
+          <div class="text-[9px] text-textdim mt-1" id="dca-r-note">—</div>
+        </div>
+      </div>
+
+      <!-- ═══ 8. PROFIT / LOSS ═══ -->
+      <div id="tool-pnl" class="glass-card p-6 purple-variant" style="animation-delay:0.4s">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(136,153,255,0.15),rgba(136,153,255,0.06))">
+            <span style="color:#00ff88">$</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">P&L Calculator</div>
+            <div class="text-[9px] text-textdim mt-0.5">Trade profit & loss estimator</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Buy Price ($)</div>
+            <input class="glass-input" id="pnl-buy" type="number" value="67000" step="0.01" min="0.01" />
+          </div>
+          <div>
+            <div class="field-label">Sell Price ($)</div>
+            <input class="glass-input" id="pnl-sell" type="number" value="72500" step="0.01" min="0.01" />
+          </div>
+          <div>
+            <div class="field-label">Quantity</div>
+            <input class="glass-input" id="pnl-qty" type="number" value="0.5" step="0.0001" min="0.0001" />
+          </div>
+          <div>
+            <div class="field-label">Fee (%)</div>
+            <input class="glass-input" id="pnl-fee" type="number" value="0.1" step="0.01" min="0" />
+          </div>
+        </div>
+
+        <button class="calc-btn gain w-full mt-4" onclick="calcPNL()">CALCULATE P&L</button>
+
+        <div class="result-box" id="pnl-result" style="display:none;border-color:rgba(0,255,136,0.15);background:rgba(0,255,136,0.04)">
+          <div class="breakdown-row"><span>Gross P/L</span><span id="pnl-r-gross">—</span></div>
+          <div class="breakdown-row"><span>Total Fees</span><span id="pnl-r-fees" style="color:#ff3366">—</span></div>
+          <div class="breakdown-row"><span>Net P/L</span><span id="pnl-r-net" style="font-weight:800">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">NET RETURN</div>
+          <div class="result-val" id="pnl-r-pct">—</div>
+          <div class="text-[9px] text-textdim mt-1" id="pnl-r-note">—</div>
+        </div>
+      </div>
+
+      <!-- ═══ 9. BREAK-EVEN ═══ -->
+      <div id="tool-breakeven" class="glass-card p-6 purple-variant" style="animation-delay:0.45s">
+        <div class="section-header">
+          <div class="tool-icon" style="background:linear-gradient(135deg,rgba(136,153,255,0.15),rgba(136,153,255,0.06))">
+            <span style="color:#8899ff">⊕</span>
+          </div>
+          <div>
+            <div class="text-[13px] font-display font-bold text-textb">Break-Even Calculator</div>
+            <div class="text-[9px] text-textdim mt-0.5">Fixed & variable cost analysis</div>
+          </div>
+        </div>
+        <div class="glass-divider"></div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <div class="field-label">Fixed Costs ($)</div>
+            <input class="glass-input" id="be-fixed" type="number" value="50000" min="0" />
+          </div>
+          <div>
+            <div class="field-label">Selling Price ($)</div>
+            <input class="glass-input" id="be-price" type="number" value="120" step="0.01" min="0.01" />
+          </div>
+          <div>
+            <div class="field-label">Variable Cost ($)</div>
+            <input class="glass-input" id="be-variable" type="number" value="75" step="0.01" min="0" />
+          </div>
+          <div>
+            <div class="field-label">Target Profit ($)</div>
+            <input class="glass-input" id="be-target" type="number" value="20000" min="0" />
+          </div>
+        </div>
+
+        <button class="calc-btn purple w-full mt-4" onclick="calcBE()">CALCULATE BREAK-EVEN</button>
+
+        <div class="result-box" id="be-result" style="display:none;border-color:rgba(136,153,255,0.15);background:rgba(136,153,255,0.04)">
+          <div class="breakdown-row"><span>Contribution Margin</span><span id="be-r-cm">—</span></div>
+          <div class="breakdown-row"><span>CM Ratio</span><span id="be-r-cmr">—</span></div>
+          <div class="glass-divider"></div>
+          <div class="field-label mt-2">BREAK-EVEN UNITS</div>
+          <div class="result-val purple-col" id="be-r-units">—</div>
+          <div class="text-[9px] text-textdim mt-1" id="be-r-note">—</div>
+        </div>
+      </div>
+
+    </div><!-- /grid -->
+
+    <!-- DISCLAIMER -->
+    <div class="mt-10 px-6 py-5 rounded-xl text-center" style="background:rgba(13,32,53,0.4);border:1px solid rgba(13,32,53,0.8)">
+      <div class="text-[9px] text-textdim tracking-[0.12em] leading-relaxed">
+        ⚠ DISCLAIMER · These tools are for educational and informational purposes only. Results are estimates based on user inputs and do not constitute financial, investment, or tax advice.
+        Past performance does not guarantee future results. Always consult a qualified financial professional before making investment decisions.
+      </div>
+    </div>
+  </main>
+
+  <script>
+  // ── CLOCK ──────────────────────────────────────────────────────
+  function updateClock(){
+    document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB',{timeZone:'UTC'})+' UTC';
+  }
+  updateClock(); setInterval(updateClock,1000);
+
+  // ── TICKER ──────────────────────────────────────────────────────
+  const INSTRUMENTS = {{ instruments_json|safe }};
+  function buildTicker(){
+    const inner=document.getElementById('ticker-inner');
+    const items=INSTRUMENTS.slice(0,12); let html='';
+    for(let p=0;p<2;p++){
+      items.forEach(inst=>{
+        const pos=inst.change>=0;
+        html+=`<span style="padding:0 4px">
+          <span style="color:#8ab0cc">${inst.id} </span>
+          <span style="color:#eaf6ff">${inst.price >= 1000 ? '$'+inst.price.toLocaleString('en-US',{maximumFractionDigits:2}) : '$'+inst.price}</span>
+          <span style="${pos?'color:#00ff88':'color:#ff3366'}"> ${pos?'▲':'▼'}${Math.abs(inst.change)}%</span>
+        </span>`;
+      });
+    }
+    inner.innerHTML=html;
+  }
+  buildTicker();
+
+  // ── HELPERS ────────────────────────────────────────────────────
+  function fmt(n, dec=2){ return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+  function fmtRaw(n, dec=2){ return Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+  function show(id){ document.getElementById(id).style.display='block'; }
+  function set(id,v){ document.getElementById(id).textContent=v; }
+
+  // ── 1. COMPOUND INTEREST ───────────────────────────────────────
+  function calcCI(){
+    const P=parseFloat(document.getElementById('ci-principal').value)||0;
+    const r=parseFloat(document.getElementById('ci-rate').value)||0;
+    const t=parseFloat(document.getElementById('ci-years').value)||0;
+    const n=parseFloat(document.getElementById('ci-freq').value)||12;
+    const A=P*Math.pow(1+(r/100)/n, n*t);
+    const interest=A-P;
+    set('ci-r-principal', fmt(P));
+    set('ci-r-interest', '+'+fmt(interest));
+    set('ci-r-total', fmt(A));
+    set('ci-r-note', `${r}% per year · compounded ${['','annually','','','quarterly','','','','','','','','monthly'][n]||'daily'} · ${t} years`);
+    show('ci-result');
+  }
+
+  // ── 2. SIP ─────────────────────────────────────────────────────
+  function calcSIP(){
+    const m=parseFloat(document.getElementById('sip-monthly').value)||0;
+    const r=(parseFloat(document.getElementById('sip-rate').value)||0)/100/12;
+    const n=parseFloat(document.getElementById('sip-years').value)*12||0;
+    const FV = r===0 ? m*n : m*((Math.pow(1+r,n)-1)/r)*(1+r);
+    const invested=m*n;
+    const returns=FV-invested;
+    set('sip-r-invested', fmt(invested));
+    set('sip-r-returns', '+'+fmt(returns));
+    set('sip-r-total', fmt(FV));
+    set('sip-r-note', `${fmtRaw(returns/invested*100,1)}% wealth gained on invested capital`);
+    show('sip-result');
+  }
+
+  // ── 3. EMI ─────────────────────────────────────────────────────
+  function calcEMI(){
+    const P=parseFloat(document.getElementById('emi-principal').value)||0;
+    const annualRate=parseFloat(document.getElementById('emi-rate').value)||0;
+    const N=parseFloat(document.getElementById('emi-months').value)||1;
+    const type=document.getElementById('emi-type').value;
+    let emi, totalPayment, totalInterest;
+    if(type==='flat'){
+      const totalInt=P*(annualRate/100)*N/12;
+      emi=(P+totalInt)/N;
+      totalInterest=totalInt;
+      totalPayment=P+totalInt;
+    } else {
+      const r=annualRate/100/12;
+      if(r===0){ emi=P/N; } else {
+        emi=P*(r*Math.pow(1+r,N))/(Math.pow(1+r,N)-1);
+      }
+      totalPayment=emi*N;
+      totalInterest=totalPayment-P;
+    }
+    const effRate=totalInterest/P*100;
+    set('emi-r-emi', fmt(emi));
+    set('emi-r-total', fmt(totalPayment));
+    set('emi-r-interest', fmt(totalInterest));
+    set('emi-r-eff', fmtRaw(effRate,2)+'%');
+    set('emi-r-note', `You pay ${fmt(totalInterest)} extra over ${N} months`);
+    show('emi-result');
+  }
+
+  // ── 4. POSITION SIZE ───────────────────────────────────────────
+  function calcPS(){
+    const acct=parseFloat(document.getElementById('ps-account').value)||0;
+    const riskPct=parseFloat(document.getElementById('ps-risk').value)||0;
+    const entry=parseFloat(document.getElementById('ps-entry').value)||1;
+    const stop=parseFloat(document.getElementById('ps-stop').value)||1;
+    const riskAmt=acct*riskPct/100;
+    const stopDist=Math.abs(entry-stop);
+    const units=stopDist>0 ? riskAmt/stopDist : 0;
+    const posValue=units*entry;
+    set('ps-r-risk', fmt(riskAmt));
+    set('ps-r-stop', fmtRaw(stopDist/entry*100,2)+'% below entry');
+    set('ps-r-units', fmtRaw(units,4)+' units');
+    set('ps-r-value', `Position value: ${fmt(posValue)} · ${fmtRaw(posValue/acct*100,1)}% of account`);
+    show('ps-result');
+  }
+
+  // ── 5. RISK / REWARD ───────────────────────────────────────────
+  function calcRR(){
+    const entry=parseFloat(document.getElementById('rr-entry').value)||0;
+    const target=parseFloat(document.getElementById('rr-target').value)||0;
+    const stop=parseFloat(document.getElementById('rr-stop').value)||0;
+    const dir=document.getElementById('rr-dir').value;
+    let profit, loss;
+    if(dir==='long'){
+      profit=target-entry; loss=entry-stop;
+    } else {
+      profit=entry-target; loss=stop-entry;
+    }
+    const ratio=loss>0 ? profit/loss : 0;
+    const profitPct=profit/entry*100;
+    const lossPct=loss/entry*100;
+    set('rr-r-profit', '+'+fmtRaw(profitPct,2)+'% ('+fmt(profit)+')');
+    set('rr-r-loss', '-'+fmtRaw(lossPct,2)+'% ('+fmt(loss)+')');
+    set('rr-r-ratio', '1 : '+fmtRaw(ratio,2));
+    let verdict='';
+    if(ratio>=3) verdict='✓ Excellent ratio — high probability setup';
+    else if(ratio>=2) verdict='✓ Good ratio — acceptable risk';
+    else if(ratio>=1) verdict='⚠ Marginal — consider adjusting targets';
+    else verdict='✗ Poor ratio — risk exceeds reward';
+    set('rr-r-verdict', verdict);
+    document.getElementById('rr-r-ratio').style.color = ratio>=2?'#8899ff':ratio>=1?'#ffb800':'#ff3366';
+    show('rr-result');
+  }
+
+  // ── 6. CURRENCY CONVERTER ─────────────────────────────────────
+  const FX_RATES = {
+    USD:1, EUR:0.922, GBP:0.788, JPY:151.84, AUD:1.533, CAD:1.368,
+    CHF:0.901, CNY:7.241, INR:83.45, SGD:1.345, BDT:109.7,
+    BTC:0.0000149, ETH:0.00026
+  };
+  function calcFX(){
+    const amt=parseFloat(document.getElementById('fx-amount').value)||0;
+    const from=document.getElementById('fx-from').value;
+    const to=document.getElementById('fx-to').value;
+    const rateFrom=FX_RATES[from]||1;
+    const rateTo=FX_RATES[to]||1;
+    const converted=amt/rateFrom*rateTo;
+    const rate=rateTo/rateFrom;
+    set('fx-r-rate-label', `1 ${from} = `);
+    set('fx-r-rate', fmtRaw(rate,6)+' '+to);
+    set('fx-r-total', fmtRaw(converted, converted>1000?2:6)+' '+to);
+    set('fx-r-note', 'Based on indicative market rates · refresh for live rates');
+    show('fx-result');
+  }
+
+  // ── 7. DCA ─────────────────────────────────────────────────────
+  function calcDCA(){
+    const recurring=parseFloat(document.getElementById('dca-amount').value)||0;
+    const freqDays=parseFloat(document.getElementById('dca-freq').value)||30;
+    const initPrice=parseFloat(document.getElementById('dca-init-price').value)||1;
+    const curPrice=parseFloat(document.getElementById('dca-cur-price').value)||1;
+    const durationMonths=parseFloat(document.getElementById('dca-duration').value)||12;
+    const totalDays=durationMonths*30;
+    const numPurchases=Math.floor(totalDays/freqDays);
+    // simulate price drift
+    let totalCost=0, totalUnits=0;
+    for(let i=0;i<numPurchases;i++){
+      const t=i/numPurchases;
+      const price=initPrice + (curPrice-initPrice)*t + (Math.random()-0.5)*initPrice*0.1;
+      const units=recurring/price;
+      totalCost+=recurring; totalUnits+=units;
+    }
+    const avgCost=totalCost/totalUnits;
+    const currentValue=totalUnits*curPrice;
+    const unrealizedPNL=currentValue-totalCost;
+    const pnlPct=unrealizedPNL/totalCost*100;
+    set('dca-r-invested', fmt(totalCost));
+    set('dca-r-avg', fmt(avgCost)+' avg/unit');
+    const pnlEl=document.getElementById('dca-r-pnl');
+    pnlEl.textContent=(unrealizedPNL>=0?'+':'')+fmt(Math.abs(unrealizedPNL))+' ('+fmtRaw(pnlPct,2)+'%)';
+    pnlEl.style.color=unrealizedPNL>=0?'#00ff88':'#ff3366';
+    set('dca-r-value', fmt(currentValue));
+    set('dca-r-note', `${numPurchases} purchases · ${fmtRaw(totalUnits,6)} total units accumulated`);
+    show('dca-result');
+  }
+
+  // ── 8. P&L ─────────────────────────────────────────────────────
+  function calcPNL(){
+    const buy=parseFloat(document.getElementById('pnl-buy').value)||0;
+    const sell=parseFloat(document.getElementById('pnl-sell').value)||0;
+    const qty=parseFloat(document.getElementById('pnl-qty').value)||0;
+    const feeRate=parseFloat(document.getElementById('pnl-fee').value)||0;
+    const gross=(sell-buy)*qty;
+    const buyFee=buy*qty*feeRate/100;
+    const sellFee=sell*qty*feeRate/100;
+    const totalFees=buyFee+sellFee;
+    const net=gross-totalFees;
+    const pct=net/(buy*qty)*100;
+    set('pnl-r-gross', (gross>=0?'+':'')+fmt(gross));
+    document.getElementById('pnl-r-gross').style.color=gross>=0?'#00ff88':'#ff3366';
+    set('pnl-r-fees', '-'+fmt(totalFees));
+    const netEl=document.getElementById('pnl-r-net');
+    netEl.textContent=(net>=0?'+':'')+fmt(net);
+    netEl.style.color=net>=0?'#00ff88':'#ff3366';
+    const pctEl=document.getElementById('pnl-r-pct');
+    pctEl.textContent=(pct>=0?'+':'')+fmtRaw(pct,2)+'%';
+    pctEl.className='result-val '+(pct>=0?'gain-col':'loss-col');
+    set('pnl-r-note', `Net cost basis: ${fmt(buy*qty)} · Net proceeds: ${fmt(sell*qty)}`);
+    show('pnl-result');
+  }
+
+  // ── 9. BREAK-EVEN ──────────────────────────────────────────────
+  function calcBE(){
+    const fixed=parseFloat(document.getElementById('be-fixed').value)||0;
+    const price=parseFloat(document.getElementById('be-price').value)||1;
+    const variable=parseFloat(document.getElementById('be-variable').value)||0;
+    const target=parseFloat(document.getElementById('be-target').value)||0;
+    const cm=price-variable;
+    const cmRatio=cm/price;
+    const beUnits=cm>0 ? Math.ceil(fixed/cm) : Infinity;
+    const unitsForTarget=cm>0 ? Math.ceil((fixed+target)/cm) : Infinity;
+    set('be-r-cm', fmt(cm)+' per unit');
+    set('be-r-cmr', fmtRaw(cmRatio*100,1)+'% margin');
+    set('be-r-units', beUnits.toLocaleString()+' units');
+    set('be-r-note', `For ${fmt(target)} profit target: ${unitsForTarget.toLocaleString()} units needed`);
+    show('be-result');
+  }
+
+  // Auto-calc on load
+  calcCI(); calcSIP(); calcEMI(); calcPS(); calcRR(); calcFX(); calcDCA(); calcPNL(); calcBE();
+  </script>
+</body>
+</html>

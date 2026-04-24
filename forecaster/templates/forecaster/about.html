@@ -1,0 +1,319 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MARKEX — About Us</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+            display: ['Merriweather', 'Georgia', 'serif'],
+            sans: ['Poppins', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            bg:'#050a0e', surface:'#0a1520', border:'#0d2035', borderb:'#1a3a5c',
+            accent:'#00d4ff', accentdim:'#0099bb', gain:'#00ff88', loss:'#ff3366',
+            gold:'#ffb800', textd:'#c8dde8', textdim:'#8ab0cc', textb:'#eaf6ff',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { zoom: 1.25; }
+    body { background:#050a0e; font-family:'Poppins',system-ui,sans-serif; color:#c8dde8; min-height:100vh; }
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:#050a0e; }
+    ::-webkit-scrollbar-thumb { background:#0d2035; border-radius:2px; }
+
+    @keyframes pulse2 { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+    @keyframes fadein { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;} }
+    @keyframes ticker-scroll { from{transform:translateX(0);}to{transform:translateX(-50%);} }
+
+    .live-dot { animation:pulse2 2s infinite; }
+    .ticker-wrap { overflow:hidden; }
+    .ticker-inner { display:flex; gap:2rem; white-space:nowrap; animation:ticker-scroll 30s linear infinite; width:max-content; }
+    .ticker-inner:hover { animation-play-state:paused; }
+
+    .nav-link {
+      font-size:10px; color:#8ab0cc; letter-spacing:0.06em;
+      text-decoration:none; transition:color .15s; font-family:'JetBrains Mono',monospace; font-weight:500;
+    }
+    .nav-link:hover { color:#00d4ff; }
+    .nav-link.active { color:#00d4ff; font-weight:700; }
+
+    .glass-card {
+      background: linear-gradient(135deg, rgba(10,21,32,0.9) 0%, rgba(5,10,20,0.8) 100%);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(0,212,255,0.12);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+      animation: fadein 0.5s ease forwards;
+      opacity: 0;
+    }
+    .glass-card.purple { border-color: rgba(136,153,255,0.15); }
+    .glass-card.purple::before { background: radial-gradient(ellipse at 20% 0%, rgba(136,153,255,0.07) 0%, transparent 60%); }
+
+    .section-tag {
+      display:inline-block; font-size:9px; font-family:'JetBrains Mono',monospace;
+      letter-spacing:0.14em; font-weight:700; text-transform:uppercase;
+      padding:4px 12px; border-radius:20px; margin-bottom:12px;
+      background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:#00d4ff;
+    }
+
+    .stat-card {
+      background: rgba(0,212,255,0.04);
+      border: 1px solid rgba(0,212,255,0.12);
+      border-radius:12px; padding:20px 24px; text-align:center;
+      transition: transform .2s, border-color .2s;
+    }
+    .stat-card:hover { transform:translateY(-2px); border-color:rgba(0,212,255,0.25); }
+
+    .value-item {
+      display:flex; gap:14px; align-items:flex-start; padding:16px 0;
+      border-bottom:1px solid rgba(13,32,53,0.6);
+    }
+    .value-item:last-child { border-bottom:none; }
+    .value-icon {
+      width:36px; height:36px; border-radius:9px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:16px;
+      background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.15);
+    }
+
+    .tech-badge {
+      display:inline-block; font-size:10px; font-family:'JetBrains Mono',monospace;
+      padding:5px 12px; border-radius:6px; margin:4px;
+      background:rgba(0,212,255,0.07); border:1px solid rgba(0,212,255,0.18); color:#7aadc8;
+      transition: background .15s, color .15s;
+    }
+    .tech-badge:hover { background:rgba(0,212,255,0.14); color:#eaf6ff; }
+
+    .gradient-divider {
+      height:1px; background:linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent);
+      margin:40px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <header class="flex items-center justify-between px-6 h-[52px] border-b sticky top-0 z-50" style="border-color:#0d2035;background:#07101a;">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-md flex items-center justify-center text-white text-[13px] font-bold"
+           style="background:linear-gradient(135deg,#00d4ff,#0044ff)">M</div>
+      <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:15px;color:#eaf6ff;letter-spacing:0.04em;">MARKEX</span>
+      <span style="font-size:9px;color:#7aadc8;border-left:1px solid #0d2035;padding-left:12px;letter-spacing:0.1em;font-family:'JetBrains Mono',monospace;">XGBoost-Powered Forecasting</span>
+    </div>
+    <nav class="flex items-center gap-5">
+      <a href="/" class="nav-link">DASHBOARD</a>
+      <a href="/markets/" class="nav-link">MARKETS</a>
+      <a href="/tools/" class="nav-link">TOOLS</a>
+      <a href="/portfolio/" class="nav-link">PORTFOLIO</a>
+      <a href="/about/" class="nav-link active">ABOUT</a>
+      <a href="/contact/" class="nav-link">CONTACT</a>
+    </nav>
+    <div class="flex items-center gap-5">
+      <div class="flex items-center gap-1.5">
+        <div class="live-dot w-1.5 h-1.5 rounded-full" style="background:#00ff88;"></div>
+        <span style="font-size:9px;color:#00ff88;letter-spacing:0.1em;font-family:'JetBrains Mono',monospace;">LIVE</span>
+      </div>
+      <span id="clock" style="font-size:9px;color:#8ab0cc;font-family:'JetBrains Mono',monospace;"></span>
+    </div>
+  </header>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap border-b py-1.5" style="border-color:#0d2035;background:#030710;">
+    <div class="ticker-inner text-[10px] tracking-[0.04em]" style="font-family:'JetBrains Mono',monospace;">
+      <span style="color:#8ab0cc;">BTC <span style="color:#eaf6ff;">67,420</span> <span style="color:#00ff88;">▲2.34%</span></span>
+      <span style="color:#8ab0cc;">ETH <span style="color:#eaf6ff;">3,842</span> <span style="color:#ff3366;">▼1.12%</span></span>
+      <span style="color:#8ab0cc;">AAPL <span style="color:#eaf6ff;">228.35</span> <span style="color:#00ff88;">▲1.45%</span></span>
+      <span style="color:#8ab0cc;">NVDA <span style="color:#eaf6ff;">875.20</span> <span style="color:#00ff88;">▲3.21%</span></span>
+      <span style="color:#8ab0cc;">XAU <span style="color:#eaf6ff;">2,312</span> <span style="color:#00ff88;">▲0.34%</span></span>
+      <span style="color:#8ab0cc;">SPY <span style="color:#eaf6ff;">542.10</span> <span style="color:#00ff88;">▲0.88%</span></span>
+      <span style="color:#8ab0cc;">TSLA <span style="color:#eaf6ff;">242.10</span> <span style="color:#ff3366;">▼2.88%</span></span>
+      <span style="color:#8ab0cc;">SOL <span style="color:#eaf6ff;">182.45</span> <span style="color:#00ff88;">▲5.67%</span></span>
+      <!-- duplicate for seamless loop -->
+      <span style="color:#8ab0cc;">BTC <span style="color:#eaf6ff;">67,420</span> <span style="color:#00ff88;">▲2.34%</span></span>
+      <span style="color:#8ab0cc;">ETH <span style="color:#eaf6ff;">3,842</span> <span style="color:#ff3366;">▼1.12%</span></span>
+      <span style="color:#8ab0cc;">AAPL <span style="color:#eaf6ff;">228.35</span> <span style="color:#00ff88;">▲1.45%</span></span>
+      <span style="color:#8ab0cc;">NVDA <span style="color:#eaf6ff;">875.20</span> <span style="color:#00ff88;">▲3.21%</span></span>
+      <span style="color:#8ab0cc;">XAU <span style="color:#eaf6ff;">2,312</span> <span style="color:#00ff88;">▲0.34%</span></span>
+      <span style="color:#8ab0cc;">SPY <span style="color:#eaf6ff;">542.10</span> <span style="color:#00ff88;">▲0.88%</span></span>
+    </div>
+  </div>
+
+  <main class="max-w-[1100px] mx-auto px-6 py-12">
+
+    <!-- HERO SECTION -->
+    <div class="text-center mb-16" style="animation:fadein 0.5s ease forwards;">
+      <div class="section-tag">About Markex</div>
+      <h1 style="font-family:'Merriweather',Georgia,serif;font-size:42px;font-weight:900;color:#eaf6ff;line-height:1.2;margin-bottom:16px;">
+        Intelligent Markets,<br>
+        <span style="background:linear-gradient(90deg,#00d4ff,#8899ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Powered by Machine Learning</span>
+      </h1>
+      <p style="font-size:15px;color:#8ab0cc;max-width:560px;margin:0 auto;line-height:1.8;font-weight:300;">
+        Markex is a professional-grade financial intelligence platform built for traders, investors, and analysts who demand precision forecasting backed by real market data.
+      </p>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+      <div class="stat-card" style="animation:fadein 0.4s 0.1s ease both;">
+        <div style="font-family:'Merriweather',serif;font-size:30px;font-weight:900;color:#00d4ff;margin-bottom:4px;">20+</div>
+        <div style="font-size:10px;color:#8ab0cc;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace;">INSTRUMENTS</div>
+      </div>
+      <div class="stat-card" style="animation:fadein 0.4s 0.15s ease both;">
+        <div style="font-family:'Merriweather',serif;font-size:30px;font-weight:900;color:#8899ff;margin-bottom:4px;">40+</div>
+        <div style="font-size:10px;color:#8ab0cc;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace;">ML FEATURES</div>
+      </div>
+      <div class="stat-card" style="animation:fadein 0.4s 0.2s ease both;">
+        <div style="font-family:'Merriweather',serif;font-size:30px;font-weight:900;color:#00ff88;margin-bottom:4px;">3</div>
+        <div style="font-size:10px;color:#8ab0cc;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace;">FORECAST HORIZONS</div>
+      </div>
+      <div class="stat-card" style="animation:fadein 0.4s 0.25s ease both;">
+        <div style="font-family:'Merriweather',serif;font-size:30px;font-weight:900;color:#ffb800;margin-bottom:4px;">10M</div>
+        <div style="font-size:10px;color:#8ab0cc;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace;">DATA REFRESH</div>
+      </div>
+    </div>
+
+    <div class="gradient-divider"></div>
+
+    <!-- OUR STORY + VALUES GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+
+      <!-- Our Story -->
+      <div class="glass-card p-8" style="animation-delay:0.1s;">
+        <div class="section-tag" style="background:rgba(136,153,255,0.08);border-color:rgba(136,153,255,0.2);color:#8899ff;">Our Story</div>
+        <h2 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:700;color:#eaf6ff;margin-bottom:14px;line-height:1.4;">
+          Born from a frustration with noisy, unreliable market data
+        </h2>
+        <p style="font-size:13px;color:#8ab0cc;line-height:1.9;margin-bottom:12px;">
+          Markex was founded by a team of quantitative analysts and software engineers who were tired of piecing together market insights from a dozen different fragmented tools.
+        </p>
+        <p style="font-size:13px;color:#8ab0cc;line-height:1.9;margin-bottom:12px;">
+          We built Markex to be the single professional dashboard that combines live market data, XGBoost-powered forecasting, and a full suite of financial calculators — all in one clean, focused interface.
+        </p>
+        <p style="font-size:13px;color:#8ab0cc;line-height:1.9;">
+          Today, Markex covers crypto, equities, commodities, ETFs, and forex — giving every type of investor the intelligent edge they deserve.
+        </p>
+      </div>
+
+      <!-- Values -->
+      <div class="glass-card p-8 purple" style="animation-delay:0.18s;">
+        <div class="section-tag" style="background:rgba(136,153,255,0.08);border-color:rgba(136,153,255,0.2);color:#8899ff;">Our Values</div>
+        <h2 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:700;color:#eaf6ff;margin-bottom:16px;">What drives us</h2>
+
+        <div class="value-item">
+          <div class="value-icon">🎯</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#eaf6ff;margin-bottom:3px;">Precision Over Hype</div>
+            <div style="font-size:12px;color:#8ab0cc;line-height:1.7;">We build models that generate honest, calibrated forecasts — not clickbait predictions.</div>
+          </div>
+        </div>
+        <div class="value-item">
+          <div class="value-icon">🔒</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#eaf6ff;margin-bottom:3px;">Data Transparency</div>
+            <div style="font-size:12px;color:#8ab0cc;line-height:1.7;">Every forecast shows its confidence level. We never hide uncertainty from our users.</div>
+          </div>
+        </div>
+        <div class="value-item">
+          <div class="value-icon">⚡</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#eaf6ff;margin-bottom:3px;">Speed & Reliability</div>
+            <div style="font-size:12px;color:#8ab0cc;line-height:1.7;">Real-time data pipelines with intelligent caching ensure you always see fresh, accurate prices.</div>
+          </div>
+        </div>
+        <div class="value-item">
+          <div class="value-icon">🌐</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#eaf6ff;margin-bottom:3px;">Universal Access</div>
+            <div style="font-size:12px;color:#8ab0cc;line-height:1.7;">Professional-grade analytics shouldn't be gated. We democratize market intelligence for all.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gradient-divider"></div>
+
+    <!-- TECHNOLOGY STACK -->
+    <div class="glass-card p-8 mb-16" style="animation-delay:0.25s;">
+      <div class="text-center mb-8">
+        <div class="section-tag">Under the Hood</div>
+        <h2 style="font-family:'Merriweather',Georgia,serif;font-size:26px;font-weight:700;color:#eaf6ff;">Technology Stack</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div style="text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">🤖</div>
+          <div style="font-size:13px;font-weight:600;color:#00d4ff;margin-bottom:6px;font-family:'JetBrains Mono',monospace;">ML ENGINE</div>
+          <p style="font-size:12px;color:#8ab0cc;line-height:1.7;margin-bottom:10px;">XGBoost Regressor trained on 2 years of historical data with 40+ engineered features including RSI, MACD, Bollinger Bands, and volume signals.</p>
+          <div>
+            <span class="tech-badge">XGBoost</span>
+            <span class="tech-badge">scikit-learn</span>
+            <span class="tech-badge">pandas</span>
+            <span class="tech-badge">numpy</span>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">📡</div>
+          <div style="font-size:13px;font-weight:600;color:#8899ff;margin-bottom:6px;font-family:'JetBrains Mono',monospace;">DATA PIPELINE</div>
+          <p style="font-size:12px;color:#8ab0cc;line-height:1.7;margin-bottom:10px;">Live market data from Yahoo Finance via yfinance, with a 12-minute refresh cycle aligned to exchange update windows. Intelligent caching prevents API throttling.</p>
+          <div>
+            <span class="tech-badge">yfinance</span>
+            <span class="tech-badge">Django Cache</span>
+            <span class="tech-badge">REST API</span>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">🖥️</div>
+          <div style="font-size:13px;font-weight:600;color:#00ff88;margin-bottom:6px;font-family:'JetBrains Mono',monospace;">FRONTEND</div>
+          <p style="font-size:12px;color:#8ab0cc;line-height:1.7;margin-bottom:10px;">Lightweight, blazing-fast interface built with Django templates, Tailwind CSS, and vanilla JavaScript. No heavy frameworks — just speed.</p>
+          <div>
+            <span class="tech-badge">Django</span>
+            <span class="tech-badge">Tailwind CSS</span>
+            <span class="tech-badge">Canvas API</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gradient-divider"></div>
+
+    <!-- DISCLAIMER -->
+    <div style="background:rgba(255,184,0,0.04);border:1px solid rgba(255,184,0,0.15);border-radius:12px;padding:20px 24px;margin-bottom:40px;animation:fadein 0.5s 0.5s ease both;opacity:0;">
+      <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#ffb800;letter-spacing:0.1em;margin-bottom:8px;">⚠ DISCLAIMER</div>
+      <p style="font-size:12px;color:#8ab0cc;line-height:1.8;">
+        Markex is provided for informational and educational purposes only. All forecasts and signals are generated by machine learning models and do not constitute financial advice. Past performance is not indicative of future results. Always conduct your own research and consult a qualified financial advisor before making investment decisions.
+      </p>
+    </div>
+
+    <!-- CTA -->
+    <div class="text-center pb-8" style="animation:fadein 0.5s 0.55s ease both;opacity:0;">
+      <p style="font-size:14px;color:#8ab0cc;margin-bottom:16px;">Have questions or feedback?</p>
+      <a href="/contact/" style="display:inline-block;background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.08));border:1px solid rgba(0,212,255,0.3);border-radius:10px;padding:12px 32px;color:#00d4ff;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;font-weight:700;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='linear-gradient(135deg,rgba(0,212,255,0.25),rgba(0,212,255,0.15))';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.08))';this.style.transform='translateY(0)'">GET IN TOUCH →</a>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer style="border-top:1px solid #0d2035;background:#030710;padding:20px 24px;text-align:center;">
+    <span style="font-size:10px;color:#7aadc8;font-family:'JetBrains Mono',monospace;letter-spacing:0.06em;">
+      MARKEX © 2025 · XGBoost-Powered Financial Intelligence · <a href="/about/" style="color:#00d4ff;text-decoration:none;">About</a> · <a href="/contact/" style="color:#00d4ff;text-decoration:none;">Contact</a>
+    </span>
+  </footer>
+
+  <script>
+    function updateClock() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB',{timeZone:'UTC'}) + ' UTC';
+    }
+    updateClock(); setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
